@@ -1,0 +1,397 @@
+/* --- INICIO DE ESTILOS CSS --- */
+:root {
+  --bg-color: #1c2331;
+  --primary-text-color: #ffffff;
+  --secondary-text-color: #b2e2f2;
+  --accent-color: #2AFAFA;
+  --primary-button-bg: #4a6dff;
+  --primary-button-hover: #3a57cc;
+  --secondary-button-bg: #6c757d;
+  --secondary-button-hover: #5a6268;
+  --export-button-bg: #28a745;
+  --export-button-hover: #218838;
+  --card-bg-color: #2a384c;
+  --error-bg-color: #dc3545;
+  --error-ok-color: #28a745; /* Verde */
+  --error-fail-color: #dc3545; /* Rojo */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--primary-text-color);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+#app-container {
+  width: 100%;
+  max-width: 800px;
+  background-color: var(--bg-color);
+  box-sizing: border-box;
+  padding-bottom: 300px; /* Espacio para el teclado */
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  color: var(--accent-color);
+  margin: 0;
+}
+
+header p {
+  color: var(--secondary-text-color);
+  margin: 0.25rem 0 0;
+}
+
+/* Estructura de Pasos */
+.app-step {
+  background-color: var(--card-bg-color);
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  display: none; /* Ocultos por defecto */
+}
+.app-step.active {
+  display: block;
+}
+
+.app-step h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--accent-color);
+  border-bottom: 1px solid var(--accent-color);
+  padding-bottom: 0.5rem;
+}
+
+/* Formularios y Entradas */
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.form-step-container {
+    display: none;
+}
+.form-step-container.active {
+    display: block;
+}
+
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--secondary-text-color);
+}
+
+input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select, input[type="file"], .numeric-input-field {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+  border: 1px solid #4a5a70;
+  border-radius: 4px;
+  background-color: #34465d;
+  color: var(--primary-text-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input::placeholder { color: #8a9eb2; }
+
+.numeric-input-field {
+    cursor: pointer;
+    min-height: 24px; /* Altura mínima para que sea clickeable */
+    display: flex;
+    align-items: center;
+}
+.numeric-input-field:empty::before {
+    content: attr(data-placeholder);
+    color: #8a9eb2;
+}
+
+/* --- ESTILOS CURSOR SIMULADO --- */
+.numeric-input-field.active-input {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 5px rgba(42, 250, 250, 0.5);
+}
+
+.cursor {
+    display: inline-block;
+    width: 1.5px;
+    height: 1.2rem;
+    background-color: var(--accent-color);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+}
+
+@keyframes blink {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+
+/* --- ESTILOS TECLADO PERSONALIZADO (RESPONSIVO) --- */
+#custom-keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #1c2331;
+    border-top: 1px solid #34465d;
+    padding: 8px;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+}
+
+#custom-keyboard.visible {
+    transform: translateY(0);
+}
+
+.keyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.keyboard-btn {
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 500;
+    background-color: var(--card-bg-color);
+    border: none;
+    color: var(--primary-text-color);
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent; /* Evita el resaltado azul en móviles */
+}
+.keyboard-btn:active {
+    background-color: var(--primary-button-hover);
+}
+.keyboard-btn.ok-btn {
+    background-color: var(--primary-button-bg);
+    grid-column: span 2;
+}
+.keyboard-btn.backspace-btn {
+    background-color: var(--secondary-button-bg);
+}
+
+
+/* Estilos Carga de Logo */
+#logo-upload-container {
+    border: 2px dashed var(--secondary-button-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#logo-upload-container:hover { background-color: #34465d; }
+#logo-preview-container {
+    margin-top: 1rem;
+    text-align: center;
+}
+#logo-preview {
+    max-width: 150px;
+    max-height: 80px;
+    border-radius: 4px;
+    border: 1px solid var(--secondary-text-color);
+}
+
+/* Botones */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out, opacity 0.2s;
+  color: var(--primary-text-color);
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary { background-color: var(--primary-button-bg); }
+.btn-primary:hover:not(:disabled) { background-color: var(--primary-button-hover); }
+
+.btn-secondary { background-color: var(--secondary-button-bg); }
+.btn-secondary:hover:not(:disabled) { background-color: var(--secondary-button-hover); }
+
+.btn-export { background-color: var(--export-button-bg); width: 100%; margin-top: 1.5rem; }
+.btn-export:hover:not(:disabled) { background-color: var(--export-button-hover); }
+
+
+/* Tabla de Calibración */
+#calibration-table-container {
+  overflow-x: auto;
+}
+#calibration-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  min-width: 600px;
+}
+#calibration-table th, #calibration-table td {
+  padding: 0.8rem;
+  border: 1px solid var(--secondary-button-bg);
+  text-align: center;
+}
+#calibration-table th {
+  background-color: #34465d;
+  color: var(--accent-color);
+}
+#calibration-table td {
+  background-color: var(--bg-color);
+  font-weight: bold;
+}
+.measured-input {
+  text-align: center;
+}
+.error-ok {
+  color: var(--error-ok-color);
+  font-size: 1.1rem;
+}
+.error-fail {
+  color: var(--error-fail-color);
+  font-size: 1.1rem;
+}
+
+/* Tarjeta de Resumen */
+#summary-card {
+  background-color: var(--bg-color);
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--secondary-button-bg);
+}
+#summary-card p {
+  margin: 0.5rem 0;
+}
+.chart-container {
+  background-color: #ffffff;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 1.5rem;
+}
+#summary-equation {
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    color: var(--accent-color);
+    background-color: #1c2331;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+
+/* Mensaje de Error y Ocultos */
+#error-message {
+  padding: 1rem;
+  background-color: var(--error-bg-color);
+  color: white;
+  text-align: center;
+  border-radius: 4px;
+  margin-top: 1.5rem;
+  font-weight: bold;
+}
+.hidden {
+  display: none;
+}
+
+/* ---- INICIO ESTILOS RESPONSIVE PARA TABLA ---- */
+@media (max-width: 700px) {
+    body { padding: 0.5rem; }
+    .app-step { padding: 1.5rem; }
+
+    #calibration-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+    #calibration-table thead {
+        display: none; /* Ocultamos la cabecera original */
+    }
+    #calibration-table tbody, #calibration-table tr {
+        display: block;
+        width: 100%;
+    }
+    #calibration-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+        padding: 0.8rem 0.5rem;
+        border-bottom: 1px solid var(--secondary-button-bg);
+    }
+    #calibration-table td:first-child {
+        display: none; /* Ocultamos la primera celda de cada fila (Ideal, Medido, Error) */
+    }
+    #calibration-table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-align: left;
+        margin-right: 1rem;
+        color: var(--secondary-text-color);
+    }
+    #ideal-values-row, #measured-values-row, #error-values-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border: 1px solid var(--secondary-button-bg);
+        border-radius: 6px;
+    }
+    #ideal-values-row::before, #measured-values-row::before, #error-values-row::before {
+        display: block;
+        width: 100%;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: var(--accent-color);
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--accent-color);
+    }
+    #ideal-values-row::before { content: 'Valores Ideales (Ref.)'; }
+    #measured-values-row::before { content: 'Valores Medidos'; }
+    #error-values-row::before { content: 'Errores Calculados'; }
+
+    #calibration-table td .numeric-input-field { width: 50%; }
+}
+/* ---- FIN ESTILOS RESPONSIVE ---- */
