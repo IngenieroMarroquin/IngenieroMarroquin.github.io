@@ -700,3 +700,15 @@ function showError(message) {
 function hideError() {
     errorMessageDiv.classList.add('hidden');
 }
+// --- REGISTRO DEL SERVICE WORKER DE LA PWA ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registrado exitosamente:', registration);
+      })
+      .catch(error => {
+        console.log('Fallo en el registro del Service Worker:', error);
+      });
+  });
+}
