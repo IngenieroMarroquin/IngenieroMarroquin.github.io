@@ -333,7 +333,7 @@ button:disabled {
   display: none;
 }
 
-/* ---- INICIO ESTILOS RESPONSIVE PARA TABLA ---- */
+/* ---- INICIO ESTILOS RESPONSIVE PARA TABLA (CORREGIDO) ---- */
 @media (max-width: 700px) {
     body { padding: 0.5rem; }
     .app-step { padding: 1.5rem; }
@@ -355,12 +355,11 @@ button:disabled {
         justify-content: space-between;
         align-items: center;
         text-align: right;
-        padding: 0.8rem 0.5rem;
+        padding: 0.8rem;
+        border: none;
         border-bottom: 1px solid var(--secondary-button-bg);
-        border-left: none;
-        border-right: none;
     }
-    #calibration-table tr:last-child td:last-child {
+     #calibration-table tr:last-child td:last-child {
         border-bottom: none;
     }
     #calibration-table td:first-child {
@@ -372,11 +371,12 @@ button:disabled {
         text-align: left;
         margin-right: 1rem;
         color: var(--secondary-text-color);
+        flex-shrink: 0;
     }
     #ideal-values-row, #measured-values-row, #error-values-row {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 0;
         margin-bottom: 2rem;
         padding: 1rem;
         border: 1px solid var(--secondary-button-bg);
@@ -397,7 +397,11 @@ button:disabled {
     #measured-values-row::before { content: 'Valores Medidos'; }
     #error-values-row::before { content: 'Errores Calculados'; }
 
-    #calibration-table td .numeric-input-field { width: 40%; }
+    #calibration-table td .numeric-input-field {
+        width: 50%;
+        padding: 0.5rem;
+        font-size: 1.1rem;
+    }
 }
 /* ---- FIN ESTILOS RESPONSIVE ---- */
 
