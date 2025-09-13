@@ -100,6 +100,7 @@ function checkLicenseAndInitialize() {
         document.getElementById('step-1-datasheet').classList.add('active');
         initializeMainApp();
     } else {
+        activationStep.style.display = 'block';
         activationStep.classList.add('active');
         mainAppSteps.forEach(step => step.style.display = 'none');
     }
@@ -108,7 +109,7 @@ function checkLicenseAndInitialize() {
 // --- CONTENEDOR PRINCIPAL DE LA APLICACIÓN ---
 function initializeMainApp() {
     
-    // --- VARIABLES Y SELECTORES DEL DOM ---
+    // --- VARIABLES Y SELECTORES DEL DOM (ENCAPSULADOS) ---
     const steps = {
         step1: document.getElementById('step-1-datasheet'),
         step2: document.getElementById('step-2-calibration'),
@@ -140,6 +141,7 @@ function initializeMainApp() {
     const clientNameGroup = document.getElementById('clientNameGroup');
     const protocolSelect = document.getElementById('protocol');
     const protocolOtherGroup = document.getElementById('protocolOtherGroup');
+    const protocolOtherInput = document.getElementById('protocolOther');
     const logoUploadContainer = document.getElementById('logo-upload-container');
     const logoInput = document.getElementById('logoInput');
     const logoPreviewContainer = document.getElementById('logo-preview-container');
@@ -147,9 +149,10 @@ function initializeMainApp() {
     const removeLogoBtn = document.getElementById('removeLogoBtn');
     const pvUnitSelect = document.getElementById('pvUnit');
     const pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
+    const pvUnitOtherInput = document.getElementById('pvUnitOther');
     const customKeyboard = document.getElementById('custom-keyboard');
 
-    // --- FUNCIONES INTERNAS COMPLETAS ---
+    // --- FUNCIONES INTERNAS (ENCAPSULADAS Y COMPLETAS) ---
     function sanitizeHTML(str) {
         if (!str) return '';
         const temp = document.createElement('div');
@@ -427,10 +430,10 @@ function initializeMainApp() {
         doc.setFontSize(11);
         doc.text("3. Resultados de la Prueba de 5 Puntos", 14, finalY);
         finalY += 2;
-        const tableBody = calibrationData.ideal.map((ideal, index) => [
+        const tableBody = calibrationState.calibrationData.ideal.map((ideal, index) => [
             `${index * 25}%`, ideal.toFixed(2),
-            calibrationData.measured[index].toFixed(2), calibrationData.ideal_mA[index].toFixed(2),
-            calibrationData.measured_mA[index].toFixed(2), calibrationData.errors_mA[index].toFixed(2)
+            calibrationState.calibrationData.measured[index].toFixed(2), calibrationState.calibrationData.ideal_mA[index].toFixed(2),
+            calibrationState.calibrationData.measured_mA[index].toFixed(2), calibrationState.calibrationData.errors_mA[index].toFixed(2)
         ]);
         doc.autoTable({
             ...tableStyles, startY: finalY, theme: 'grid', margin: { left: 14, right: 14 },
@@ -438,7 +441,7 @@ function initializeMainApp() {
             body: tableBody,
             didDrawCell: (data) => {
                 if (data.column.index === 5 && data.cell.section === 'body') {
-                    const errorInMA = calibrationData.errors_mA[data.row.index];
+                    const errorInMA = calibrationState.calibrationData.errors_mA[data.row.index];
                     const isCellOk = isWithinTolerance(errorInMA, calibrationState.errorThreshold_mA);
                     doc.setFillColor(isCellOk ? 40 : 220, isCellOk ? 167 : 53, isCellOk ? 69 : 69);
                     doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
@@ -550,6 +553,18 @@ function initializeMainApp() {
         if (errorMessageDiv) {
             errorMessageDiv.classList.add('hidden');
         }
+    }
+    
+    function resetCalibrationState() {
+        isValidated = false;
+        calibrationState = {
+            instrumentData: {},
+            calibrationData: { ideal: [], measured: [], errors: [], ideal_mA: [], measured_mA: [], errors_mA: [] },
+            span: 0,
+            errorThreshold_mA: 0,
+            chart: null,
+            equation: { m: 0, b: 0, formatted: '' }
+        };
     }
     
     // --- ASIGNACIÓN DE EVENT LISTENERS ---
@@ -687,3 +702,4 @@ if ('serviceWorker' in navigator) {
       .catch(e => console.log('Fallo en registro de SW:', e));
   });
 }
+
