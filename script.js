@@ -105,10 +105,10 @@ function checkLicenseAndInitialize() {
     }
 }
 
-// --- CONTENEDOR DE LA APLICACIÓN PRINCIPAL ---
+// --- CONTENEDOR PRINCIPAL DE LA APLICACIÓN ---
 function initializeMainApp() {
     
-    // --- VARIABLES Y SELECTORES DEL DOM (ENCAPSULADOS) ---
+    // --- VARIABLES Y SELECTORES DEL DOM ---
     const steps = {
         step1: document.getElementById('step-1-datasheet'),
         step2: document.getElementById('step-2-calibration'),
@@ -149,7 +149,7 @@ function initializeMainApp() {
     const pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
     const customKeyboard = document.getElementById('custom-keyboard');
 
-    // --- FUNCIONES INTERNAS (ENCAPSULADAS Y COMPLETAS) ---
+    // --- FUNCIONES INTERNAS COMPLETAS ---
     function sanitizeHTML(str) {
         if (!str) return '';
         const temp = document.createElement('div');
@@ -359,7 +359,7 @@ function initializeMainApp() {
     async function generatePDF() {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
         const { instrumentData, calibrationData, equation } = calibrationState;
-        const isOk = calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
+        const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
         let finalY = 10;
         const pageHeight = doc.internal.pageSize.getHeight();
         const footerText = "La validez de este reporte está sujeta a las condiciones del instrumento al momento de la prueba.";
@@ -484,8 +484,8 @@ function initializeMainApp() {
         doc.setFontSize(9); doc.setTextColor(80);
         const margin = 14; const textWidth = doc.internal.pageSize.getWidth() - (margin * 2);
         let analysisText = isOk
-            ? `Análisis de Resultados: La desviación máxima registrada durante la prueba se encuentra dentro de la tolerancia de ±${instrumentData.permissibleError}% del span configurado...`
-            : `Análisis de Resultados: Se ha identificado una desviación en uno o más puntos de la prueba que excede la tolerancia máxima permisible...`;
+            ? `Análisis de Resultados: La desviación máxima registrada durante la prueba se encuentra dentro de la tolerancia de ±${instrumentData.permissibleError}% del span configurado. El instrumento demuestra una respuesta lineal y una exactitud consistentes con las especificaciones del fabricante para su operación nominal.`
+            : `Análisis de Resultados: Se ha identificado una desviación en uno o más puntos de la prueba que excede la tolerancia máxima permisible de ±${instrumentData.permissibleError}% del span. Se recomienda una intervención de ajuste (trimming) y una subsecuente verificación (As-Left) para restablecer la exactitud del instrumento a los parámetros operacionales requeridos.`;
         const splitText = doc.splitTextToSize(analysisText, textWidth);
         doc.text(splitText, margin, finalY); doc.setTextColor(0, 0, 0);
 
@@ -538,7 +538,7 @@ function initializeMainApp() {
         navigateToFormStep('1a');
         navigateToAppStep('step1');
     }
-
+    
     function showError(message) {
         if (errorMessageDiv) {
             errorMessageDiv.textContent = message;
