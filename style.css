@@ -344,7 +344,7 @@ button:disabled {
         min-width: 0;
     }
     #calibration-table thead {
-        display: none; /* Ocultamos la cabecera original */
+        display: none;
     }
     #calibration-table tbody, #calibration-table tr {
         display: block;
@@ -357,9 +357,14 @@ button:disabled {
         text-align: right;
         padding: 0.8rem 0.5rem;
         border-bottom: 1px solid var(--secondary-button-bg);
+        border-left: none;
+        border-right: none;
+    }
+    #calibration-table tr:last-child td:last-child {
+        border-bottom: none;
     }
     #calibration-table td:first-child {
-        display: none; /* Ocultamos la primera celda de cada fila (Ideal, Medido, Error) */
+        display: none;
     }
     #calibration-table td::before {
         content: attr(data-label);
@@ -392,7 +397,7 @@ button:disabled {
     #measured-values-row::before { content: 'Valores Medidos'; }
     #error-values-row::before { content: 'Errores Calculados'; }
 
-    #calibration-table td .numeric-input-field { width: 50%; }
+    #calibration-table td .numeric-input-field { width: 40%; }
 }
 /* ---- FIN ESTILOS RESPONSIVE ---- */
 
