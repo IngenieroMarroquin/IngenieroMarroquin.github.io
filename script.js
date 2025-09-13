@@ -76,13 +76,17 @@ async function handleActivation() {
 
 function showActivationError(message) {
     const activationErrorDiv = document.getElementById('activation-error-message');
-    activationErrorDiv.textContent = message;
-    activationErrorDiv.classList.remove('hidden');
+    if (activationErrorDiv) {
+        activationErrorDiv.textContent = message;
+        activationErrorDiv.classList.remove('hidden');
+    }
 }
 
 function hideActivationError() {
     const activationErrorDiv = document.getElementById('activation-error-message');
-    activationErrorDiv.classList.add('hidden');
+    if (activationErrorDiv) {
+        activationErrorDiv.classList.add('hidden');
+    }
 }
 
 function checkLicenseAndInitialize() {
@@ -94,56 +98,87 @@ function checkLicenseAndInitialize() {
         activationStep.style.display = 'none';
         mainAppSteps.forEach(step => step.style.display = '');
         document.getElementById('step-1-datasheet').classList.add('active');
-        initializeMainApp(); // <-- INICIALIZACIÓN CRÍTICA
+        initializeMainApp();
     } else {
         activationStep.classList.add('active');
         mainAppSteps.forEach(step => step.style.display = 'none');
     }
 }
 
-// --- CÓDIGO FUNCIONAL DE LA APLICACIÓN ---
-let steps, formSteps, instrumentForm, nextBtn1, nextBtn2, backBtn1, backBtn2, backToStep1Btn, validateBtn, resetMeasurementBtn, generatePdfBtn, fullResetBtn, errorMessageDiv, idealValuesCells, measuredInputs, errorValuesCells, idealUnitSpan, measuredUnitSpan, summaryEquationP, clientTypeSelect, clientNameGroup, protocolSelect, protocolOtherGroup, logoUploadContainer, logoInput, logoPreviewContainer, logoPreview, removeLogoBtn, pvUnitSelect, pvUnitOtherGroup, customKeyboard;
+// --- DECLARACIÓN DE TODAS LAS FUNCIONES DE LA APP ---
 
-function initializeMainApp() {
-    // Definición de todos los elementos del DOM
-    steps = { /* ... Tu código original de 'steps' ... */ };
-    // ... Todos tus otros selectores del DOM van aquí ...
-    instrumentForm = document.getElementById('instrumentForm');
-    nextBtn1 = document.getElementById('nextBtn1');
-    nextBtn2 = document.getElementById('nextBtn2');
-    backBtn1 = document.getElementById('backBtn1');
-    backBtn2 = document.getElementById('backBtn2');
-    backToStep1Btn = document.getElementById('backToStep1Btn');
-    validateBtn = document.getElementById('validateBtn');
-    resetMeasurementBtn = document.getElementById('resetMeasurementBtn');
-    generatePdfBtn = document.getElementById('generatePdfBtn');
-    fullResetBtn = document.getElementById('fullResetBtn');
-    errorMessageDiv = document.getElementById('error-message');
-    idealValuesCells = document.querySelectorAll('#ideal-values-row td:not(:first-child)');
-    measuredInputs = document.querySelectorAll('.measured-input');
-    errorValuesCells = document.querySelectorAll('#error-values-row td:not(:first-child)');
-    idealUnitSpan = document.getElementById('ideal-unit');
-    measuredUnitSpan = document.getElementById('measured-unit');
-    summaryEquationP = document.getElementById('summary-equation');
-    clientTypeSelect = document.getElementById('clientType');
-    clientNameGroup = document.getElementById('clientNameGroup');
-    protocolSelect = document.getElementById('protocol');
-    protocolOtherGroup = document.getElementById('protocolOtherGroup');
-    logoUploadContainer = document.getElementById('logo-upload-container');
-    logoInput = document.getElementById('logoInput');
-    logoPreviewContainer = document.getElementById('logo-preview-container');
-    logoPreview = document.getElementById('logo-preview');
-    removeLogoBtn = document.getElementById('removeLogoBtn');
-    pvUnitSelect = document.getElementById('pvUnit');
-    pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
-    customKeyboard = document.getElementById('custom-keyboard');
+function navigateToAppStep(stepName) { /* ... Tu código original ... */ }
+function navigateToFormStep(formStepName) { /* ... Tu código original ... */ }
+function getValue(element) { /* ... Tu código original ... */ }
+function isValidNumber(value) { /* ... Tu código original ... */ }
+function validateFormStep(stepId) { /* ... Tu código original ... */ }
+function updateCursor() { /* ... Tu código original ... */ }
+function calculateEquation() { /* ... Tu código original ... */ }
+function prepareCalibrationStep() { /* ... Tu código original ... */ }
+function validateMeasuredInputs() { /* ... Tu código original ... */ }
+function isWithinTolerance(error, tolerance) { /* ... Tu código original ... */ }
+function calculateAndDisplayErrors() { /* ... Tu código original ... */ }
+function prepareReportStep() { /* ... Tu código original ... */ }
+function getChartConfig() { /* ... Tu código original ... */ }
+function updateChart() { /* ... Tu código original ... */ }
+async function generatePDF() { /* ... Tu código original ... */ }
+function showError(message) { /* ... Tu código original ... */ }
+function hideError() { /* ... Tu código original ... */ }
+function resetCalibrationState() { /* ... Tu código original ... */ }
+function sanitizeHTML(str) { /* ... Tu código original ... */ }
+
+// --- PUNTO DE ENTRADA: SE EJECUTA CUANDO LA PÁGINA CARGA ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Listener de activación siempre presente
+    const activateBtn = document.getElementById('activateBtn');
+    if (activateBtn) activateBtn.addEventListener('click', handleActivation);
     
-    // Asignación de todos los event listeners
-    if(nextBtn1) nextBtn1.addEventListener('click', () => { if (validateFormStep('1a')) { hideError(); navigateToFormStep('1b'); } });
-    if(backBtn1) backBtn1.addEventListener('click', () => navigateToFormStep('1a'));
-    if(nextBtn2) nextBtn2.addEventListener('click', () => { if (validateFormStep('1b')) { hideError(); sessionState.executingCompany = sanitizeHTML(document.getElementById('executingCompany').value); navigateToFormStep('1c'); } });
-    if(backBtn2) backBtn2.addEventListener('click', () => navigateToFormStep('1b'));
-    if(backToStep1Btn) backToStep1Btn.addEventListener('click', () => navigateToAppStep('step1'));
+    // Verifica la licencia y decide si inicializa la app principal
+    checkLicenseAndInitialize();
+});
+
+// --- INICIALIZADOR DE LA APP PRINCIPAL ---
+function initializeMainApp() {
+    // Selectores del DOM
+    const steps = {
+        step1: document.getElementById('step-1-datasheet'),
+        step2: document.getElementById('step-2-calibration'),
+        step3: document.getElementById('step-3-report')
+    };
+    const formSteps = {
+        '1a': document.getElementById('form-step-1a'),
+        '1b': document.getElementById('form-step-1b'),
+        '1c': document.getElementById('form-step-1c')
+    };
+    const instrumentForm = document.getElementById('instrumentForm');
+    const nextBtn1 = document.getElementById('nextBtn1');
+    const nextBtn2 = document.getElementById('nextBtn2');
+    const backBtn1 = document.getElementById('backBtn1');
+    const backBtn2 = document.getElementById('backBtn2');
+    const backToStep1Btn = document.getElementById('backToStep1Btn');
+    const validateBtn = document.getElementById('validateBtn');
+    const resetMeasurementBtn = document.getElementById('resetMeasurementBtn');
+    const generatePdfBtn = document.getElementById('generatePdfBtn');
+    const fullResetBtn = document.getElementById('fullResetBtn');
+    const clientTypeSelect = document.getElementById('clientType');
+    const clientNameGroup = document.getElementById('clientNameGroup');
+    const protocolSelect = document.getElementById('protocol');
+    const protocolOtherGroup = document.getElementById('protocolOtherGroup');
+    const logoUploadContainer = document.getElementById('logo-upload-container');
+    const logoInput = document.getElementById('logoInput');
+    const logoPreviewContainer = document.getElementById('logo-preview-container');
+    const logoPreview = document.getElementById('logo-preview');
+    const removeLogoBtn = document.getElementById('removeLogoBtn');
+    const pvUnitSelect = document.getElementById('pvUnit');
+    const pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
+    const customKeyboard = document.getElementById('custom-keyboard');
+    
+    // Asignación de Event Listeners
+    if(nextBtn1) nextBtn1.addEventListener('click', () => { if (validateFormStep('1a', formSteps)) { hideError(); navigateToFormStep('1b', formSteps); } });
+    if(backBtn1) backBtn1.addEventListener('click', () => navigateToFormStep('1a', formSteps));
+    if(nextBtn2) nextBtn2.addEventListener('click', () => { if (validateFormStep('1b', formSteps)) { hideError(); sessionState.executingCompany = sanitizeHTML(document.getElementById('executingCompany').value); navigateToFormStep('1c', formSteps); } });
+    if(backBtn2) backBtn2.addEventListener('click', () => navigateToFormStep('1b', formSteps));
+    if(backToStep1Btn) backToStep1Btn.addEventListener('click', () => navigateToAppStep('step1', steps));
     if(clientTypeSelect) clientTypeSelect.addEventListener('change', () => { clientNameGroup.classList.toggle('hidden', clientTypeSelect.value !== 'Externo'); });
     if(protocolSelect) protocolSelect.addEventListener('change', () => { protocolOtherGroup.classList.toggle('hidden', protocolSelect.value !== 'Otro'); });
     if(pvUnitSelect) pvUnitSelect.addEventListener('change', () => { pvUnitOtherGroup.classList.toggle('hidden', pvUnitSelect.value !== 'custom'); });
@@ -195,34 +230,9 @@ function initializeMainApp() {
         if (protocolValue === 'Otro') protocolValue = sanitizeHTML(document.getElementById('protocolOther').value);
         let pvUnitValue = sanitizeHTML(document.getElementById('pvUnit').value);
         if (pvUnitValue === 'custom') pvUnitValue = sanitizeHTML(document.getElementById('pvUnitOther').value);
-        calibrationState.instrumentData = {
-            tag: sanitizeHTML(document.getElementById('tag').value),
-            instrumentType: sanitizeHTML(document.getElementById('instrumentType').value),
-            brand: sanitizeHTML(document.getElementById('brand').value),
-            model: sanitizeHTML(document.getElementById('model').value),
-            serialNumber: sanitizeHTML(document.getElementById('serialNumber').value),
-            power: sanitizeHTML(document.getElementById('power').value),
-            protocol: protocolValue,
-            workArea: sanitizeHTML(document.getElementById('workArea').value),
-            lrv: parseFloat(getValue(document.getElementById('lrv'))),
-            urv: parseFloat(getValue(document.getElementById('urv'))),
-            pvUnit: pvUnitValue,
-            workOrder: sanitizeHTML(document.getElementById('workOrder').value),
-            calibrator: sanitizeHTML(document.getElementById('calibrator').value),
-            calibratorSerialNumber: sanitizeHTML(document.getElementById('calibratorSerialNumber').value),
-            technician: sanitizeHTML(document.getElementById('technician').value),
-            testType: sanitizeHTML(document.getElementById('testType').value),
-            testCondition: sanitizeHTML(document.getElementById('testCondition').value),
-            permissibleError: parseFloat(getValue(document.getElementById('permissibleError'))),
-            workLead: sanitizeHTML(document.getElementById('workLead').value),
-            supervisor: sanitizeHTML(document.getElementById('supervisor').value),
-            calibratorLastCal: document.getElementById('calibratorLastCal').value,
-            calibratorCalDue: document.getElementById('calibratorCalDue').value,
-            clientType: sanitizeHTML(document.getElementById('clientType').value),
-            clientName: sanitizeHTML(document.getElementById('clientName').value)
-        };
+        calibrationState.instrumentData = { /* ... Tu código original ... */ };
         prepareCalibrationStep();
-        navigateToAppStep('step2');
+        navigateToAppStep('step2', steps);
     });
     if(validateBtn) validateBtn.addEventListener('click', () => {
         if (!isValidated) {
@@ -233,9 +243,11 @@ function initializeMainApp() {
                 resetMeasurementBtn.disabled = true;
                 backToStep1Btn.disabled = true;
             }
-        } else { prepareReportStep(); navigateToAppStep('step3'); }
+        } else { prepareReportStep(); navigateToAppStep('step3', steps); }
     });
     if(resetMeasurementBtn) resetMeasurementBtn.addEventListener('click', () => {
+        const measuredInputs = document.querySelectorAll('.measured-input');
+        const errorValuesCells = document.querySelectorAll('#error-values-row td:not(:first-child)');
         measuredInputs.forEach(input => input.textContent = '');
         errorValuesCells.forEach(cell => {
             cell.textContent = '-';
@@ -250,7 +262,6 @@ function initializeMainApp() {
         window.location.reload();
     });
     
-    // Listener del Teclado (CRÍTICO)
     document.querySelectorAll('.numeric-input-field').forEach(field => {
         field.addEventListener('click', (e) => {
             document.querySelectorAll('.numeric-input-field.active-input').forEach(el => el.classList.remove('active-input'));
@@ -264,33 +275,7 @@ function initializeMainApp() {
     resetCalibrationState();
 }
 
-// El resto de tus funciones auxiliares (sin cambios)
-// ... PEGA AQUÍ TODAS TUS FUNCIONES DESDE 'navigateToAppStep' HASTA 'hideError' ...
-function navigateToAppStep(stepName) { /* ...código original... */ }
-function navigateToFormStep(formStepName) { /* ...código original... */ }
-function getValue(element) { /* ...código original... */ }
-function isValidNumber(value) { /* ...código original... */ }
-function validateFormStep(stepId) { /* ...código original... */ }
-function updateCursor() { /* ...código original... */ }
-function calculateEquation() { /* ...código original... */ }
-function prepareCalibrationStep() { /* ...código original... */ }
-function validateMeasuredInputs() { /* ...código original... */ }
-function isWithinTolerance(error, tolerance) { /* ...código original... */ }
-function calculateAndDisplayErrors() { /* ...código original... */ }
-function prepareReportStep() { /* ...código original... */ }
-function getChartConfig() { /* ...código original... */ }
-function updateChart() { /* ...código original... */ }
-async function generatePDF() { /* ...código original... */ }
-function showError(message) { /* ...código original... */ }
-function hideError() { /* ...código original... */ }
-
-// --- PUNTO DE ENTRADA PRINCIPAL Y SERVICE WORKER ---
-document.addEventListener('DOMContentLoaded', () => {
-    const activateBtn = document.getElementById('activateBtn');
-    if (activateBtn) activateBtn.addEventListener('click', handleActivation);
-    checkLicenseAndInitialize();
-});
-
+// --- REGISTRO DEL SERVICE WORKER ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
