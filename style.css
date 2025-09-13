@@ -395,3 +395,26 @@ button:disabled {
     #calibration-table td .numeric-input-field { width: 50%; }
 }
 /* ---- FIN ESTILOS RESPONSIVE ---- */
+
+/* --- ESTILOS PARA EL LOADER DE ACTIVACIÓN --- */
+#activateBtn.loading {
+  position: relative;
+  color: transparent;
+}
+#activateBtn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--primary-text-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
