@@ -22,6 +22,23 @@
       <p>Herramienta de Calibración y Certificación de Instrumentos</p>
     </header>
 
+    <section id="step-0-activation" class="app-step">
+        <h2>Activación de SignalCheck PRO</h2>
+        <p>Por favor, introduce tu clave de licencia para activar todas las funcionalidades de la aplicación.</p>
+        
+        <div class="input-grid" style="grid-template-columns: 1fr;">
+            <div class="input-group">
+                <label for="licenseKey">Clave de Licencia</label>
+                <input type="text" id="licenseKey" placeholder="SCP-XXXX-XXXX-XXXX" style="text-transform: uppercase;">
+            </div>
+        </div>
+        
+        <div class="button-group" style="justify-content: center;">
+            <button type="button" id="activateBtn" class="btn-primary">Activar Licencia</button>
+        </div>
+        <div id="activation-error-message" class="hidden" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--error-bg-color); color: white; text-align: center; border-radius: 4px; font-weight: bold;"></div>
+    </section>
+
     <section id="step-1-datasheet" class="app-step active">
         <form id="instrumentForm">
             <div id="form-step-1a" class="form-step-container active">
