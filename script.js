@@ -1,5 +1,10 @@
 "use strict";
 
+// --- CONSTANTES DE CONFIGURACIÓN ---
+const API_URL = 'https://signalcheck-pro-api.vercel.app/verify-license';
+const LICENSE_STORAGE_KEY = 'signalcheck_pro_license_status';
+
+// --- INICIALIZACIÓN DE LIBRERÍAS ---
 const { jsPDF } = window.jspdf;
 Chart.register(ChartDataLabels);
 
@@ -13,6 +18,123 @@ let calibrationState = {};
 let isValidated = false; 
 let activeNumericInput = null;
 let cursorSpan = null;
+
+// --- LÓGICA DE LICENCIAMIENTO ---
+
+/**
+ * Genera una huella digital simple del navegador para identificar el dispositivo.
+ * @returns {Promise<string>} Una promesa que se resuelve con la huella digital.
+ */
+async function generateFingerprint() {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    const renderer = gl ? gl.getParameter(gl.RENDERER) : 'no-webgl';
+  
+    const data = [
+        navigator.userAgent,
+        screen.width + 'x' + screen.height,
+        navigator.language,
+        new Date().getTimezoneOffset(),
+        renderer
+    ].join('||');
+
+    // Usamos la API de cifrado del navegador para crear un hash (más robusto que una simple cadena)
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
+
+/**
+ * Maneja el flujo de activación de la licencia.
+ */
+async function handleActivation() {
+    const activateBtn = document.getElementById('activateBtn');
+    const licenseKeyInput = document.getElementById('licenseKey');
+    const activationErrorDiv = document.getElementById('activation-error-message');
+
+    const licenseKey = licenseKeyInput.value.trim().toUpperCase();
+    if (!licenseKey) {
+        showActivationError('Por favor, introduce una clave de licencia.');
+        return;
+    }
+
+    activateBtn.textContent = 'Verificando...';
+    activateBtn.disabled = true;
+    hideActivationError();
+
+    try {
+        const fingerprint = await generateFingerprint();
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ licenseKey, fingerprint })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // ¡Éxito! Guardamos el estado y desbloqueamos la app.
+            localStorage.setItem(LICENSE_STORAGE_KEY, 'VALID');
+            document.getElementById('step-0-activation').classList.remove('active');
+            document.getElementById('step-1-datasheet').classList.add('active');
+        } else {
+            // Fallo, mostramos el mensaje del servidor.
+            showActivationError(data.message || 'Error desconocido.');
+        }
+
+    } catch (error) {
+        console.error('Error de red al activar:', error);
+        showActivationError('Error de conexión. Verifica tu acceso a internet.');
+    } finally {
+        activateBtn.textContent = 'Activar Licencia';
+        activateBtn.disabled = false;
+    }
+}
+
+function showActivationError(message) {
+    const activationErrorDiv = document.getElementById('activation-error-message');
+    activationErrorDiv.textContent = message;
+    activationErrorDiv.classList.remove('hidden');
+}
+
+function hideActivationError() {
+    const activationErrorDiv = document.getElementById('activation-error-message');
+    activationErrorDiv.classList.add('hidden');
+}
+
+
+/**
+ * Comprueba el estado de la licencia al iniciar la aplicación.
+ */
+function checkLicense() {
+    const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY);
+    const activationStep = document.getElementById('step-0-activation');
+    const mainAppStep = document.getElementById('step-1-datasheet');
+    
+    if (licenseStatus === 'VALID') {
+        // Licencia válida, mostramos la app
+        activationStep.style.display = 'none';
+        activationStep.classList.remove('active');
+        mainAppStep.classList.add('active');
+    } else {
+        // Sin licencia, mostramos solo la pantalla de activación
+        activationStep.classList.add('active');
+        mainAppStep.style.display = 'none'; // Ocultamos completamente el resto
+        mainAppStep.classList.remove('active');
+    }
+}
+
+
+// --- CÓDIGO ORIGINAL DE LA APLICACIÓN (con pequeños ajustes) ---
+
+// Resto del código... (el código original que ya teníamos)
+// ... (Aquí iría todo tu código desde resetCalibrationState hasta hideError)
+"use strict";
 
 function resetCalibrationState() {
     isValidated = false;
@@ -30,7 +152,6 @@ function resetCalibrationState() {
 }
 resetCalibrationState();
 
-// --- FUNCIÓN DE SEGURIDAD ---
 function sanitizeHTML(str) {
     if (!str) return '';
     const temp = document.createElement('div');
@@ -38,9 +159,8 @@ function sanitizeHTML(str) {
     return temp.innerHTML;
 }
 
-
-// --- SELECTORES DEL DOM ---
 const steps = {
+    step0: document.getElementById('step-0-activation'),
     step1: document.getElementById('step-1-datasheet'),
     step2: document.getElementById('step-2-calibration'),
     step3: document.getElementById('step-3-report')
@@ -82,18 +202,22 @@ const pvUnitSelect = document.getElementById('pvUnit');
 const pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
 const pvUnitOtherInput = document.getElementById('pvUnitOther');
 const customKeyboard = document.getElementById('custom-keyboard');
+const activateBtn = document.getElementById('activateBtn');
 
 
-// --- LÓGICA DE NAVEGACIÓN Y UI ---
 function navigateToAppStep(stepName) {
-    Object.values(steps).forEach(step => step.classList.remove('active'));
-    steps[stepName].classList.add('active');
+    Object.values(steps).forEach(step => {
+        if(step) step.classList.remove('active');
+    });
+    if(steps[stepName]) steps[stepName].classList.add('active');
     window.scrollTo(0, 0);
 }
 
 function navigateToFormStep(formStepName) {
-    Object.values(formSteps).forEach(step => step.classList.remove('active'));
-    formSteps[formStepName].classList.add('active');
+    Object.values(formSteps).forEach(step => {
+        if(step) step.classList.remove('active');
+    });
+    if(formSteps[formStepName]) formSteps[formStepName].classList.add('active');
 }
 
 function getValue(element) {
@@ -123,12 +247,18 @@ nextBtn2.addEventListener('click', () => {
     }
 });
 backBtn2.addEventListener('click', () => navigateToFormStep('1b'));
-backToStep1Btn.addEventListener('click', () => navigateToAppStep('step1'));
+backToStep1Btn.addEventListener('click', () => {
+    document.getElementById('step-1-datasheet').style.display = 'block';
+    navigateToAppStep('step1');
+});
 
 
 function validateFormStep(stepId) {
     let allValid = true;
-    const requiredElements = formSteps[stepId].querySelectorAll('[required]');
+    const container = formSteps[stepId];
+    if (!container) return false;
+
+    const requiredElements = container.querySelectorAll('[required]');
     
     for (const el of requiredElements) {
         let value = '';
@@ -140,9 +270,9 @@ function validateFormStep(stepId) {
 
         if (el.offsetParent !== null && value.trim() === '') {
              allValid = false;
-             const label = document.querySelector(`label[for="${el.id}-wrapper"]`) || el.labels[0];
-             showError(`El campo "${label.textContent}" es obligatorio.`);
-             el.classList.add('active-input'); // Resaltar campo vacío
+             const label = document.querySelector(`label[for="${el.id}-wrapper"]`) || (el.labels ? el.labels[0] : null);
+             showError(`El campo "${label ? label.textContent : el.id}" es obligatorio.`);
+             el.classList.add('active-input'); 
              setTimeout(() => el.classList.remove('active-input'), 2000);
              break;
         }
@@ -187,7 +317,6 @@ pvUnitSelect.addEventListener('change', () => {
     pvUnitOtherGroup.classList.toggle('hidden', !isCustom);
 });
 
-
 logoUploadContainer.addEventListener('click', () => logoInput.click());
 logoInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
@@ -211,14 +340,11 @@ removeLogoBtn.addEventListener('click', () => {
     logoUploadContainer.classList.remove('hidden');
 });
 
-// --- LÓGICA TECLADO PERSONALIZADO Y CURSOR ---
 function updateCursor() {
-    // Eliminar cursor existente
     if (cursorSpan) {
         cursorSpan.remove();
         cursorSpan = null;
     }
-    // Crear y añadir nuevo cursor si hay un input activo
     if (activeNumericInput) {
         cursorSpan = document.createElement('span');
         cursorSpan.className = 'cursor';
@@ -228,7 +354,6 @@ function updateCursor() {
 
 document.querySelectorAll('.numeric-input-field').forEach(field => {
     field.addEventListener('click', (e) => {
-        // Quitar clase activa de cualquier otro input
         document.querySelectorAll('.numeric-input-field.active-input').forEach(el => el.classList.remove('active-input'));
         
         activeNumericInput = e.currentTarget;
@@ -245,7 +370,6 @@ customKeyboard.addEventListener('click', (e) => {
     const key = e.target.dataset.key;
     let value = activeNumericInput.textContent.replace(/<span class="cursor"><\/span>/g, '');
 
-
     switch (key) {
         case 'ok':
             customKeyboard.classList.remove('visible');
@@ -258,16 +382,12 @@ customKeyboard.addEventListener('click', (e) => {
             value = value.slice(0, -1);
             break;
         case '.':
-            if (!value.includes('.')) {
-                value += '.';
-            }
+            if (!value.includes('.')) value += '.';
             break;
         case '-':
-            if (value.length === 0) {
-                value += '-';
-            }
+            if (value.length === 0) value += '-';
             break;
-        default: // Números
+        default: 
             value += key;
             break;
     }
@@ -276,8 +396,6 @@ customKeyboard.addEventListener('click', (e) => {
     updateCursor();
 });
 
-
-// --- LÓGICA PRINCIPAL ---
 instrumentForm.addEventListener('submit', (e) => {
     e.preventDefault();
     hideError();
@@ -324,7 +442,7 @@ instrumentForm.addEventListener('submit', (e) => {
 });
 
 validateBtn.addEventListener('click', () => {
-    if (!isValidated) { // Primera pulsación: Validar
+    if (!isValidated) {
         if (validateMeasuredInputs()) {
             calculateAndDisplayErrors();
             isValidated = true;
@@ -332,7 +450,7 @@ validateBtn.addEventListener('click', () => {
             resetMeasurementBtn.disabled = true;
             backToStep1Btn.disabled = true;
         }
-    } else { // Segunda pulsación: Continuar
+    } else {
         prepareReportStep();
         navigateToAppStep('step3');
     }
@@ -349,7 +467,11 @@ resetMeasurementBtn.addEventListener('click', () => {
 });
 
 generatePdfBtn.addEventListener('click', generatePDF);
-fullResetBtn.addEventListener('click', softReset);
+fullResetBtn.addEventListener('click', () => {
+    // Soft reset no es suficiente, recargamos para forzar la verificación de licencia.
+    window.location.reload();
+});
+
 
 function calculateEquation() {
     const { lrv, urv } = calibrationState.instrumentData;
@@ -480,7 +602,7 @@ function updateChart() {
 async function generatePDF() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
     const { instrumentData, calibrationData, equation } = calibrationState;
-    const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
+    const isOk = calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
     let finalY = 10;
     const pageHeight = doc.internal.pageSize.getHeight();
     const footerText = "La validez de este reporte está sujeta a las condiciones del instrumento al momento de la prueba.";
@@ -700,6 +822,7 @@ function showError(message) {
 function hideError() {
     errorMessageDiv.classList.add('hidden');
 }
+
 // --- REGISTRO DEL SERVICE WORKER DE LA PWA ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -712,3 +835,15 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+
+// --- PUNTO DE ENTRADA DE LA APLICACIÓN ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Primero, vinculamos el evento al botón de activación
+    const activateBtn = document.getElementById('activateBtn');
+    if (activateBtn) {
+        activateBtn.addEventListener('click', handleActivation);
+    }
+
+    // Luego, comprobamos la licencia para decidir qué pantalla mostrar
+    checkLicense();
+});
