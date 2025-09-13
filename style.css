@@ -418,3 +418,13 @@ button:disabled {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* --- ESTILOS PARA TRANSICIONES DE VISTA --- */
+.app-step.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+.app-step.fade-in {
+  opacity: 1;
+  transition: opacity 0.3s ease-in;
+}
