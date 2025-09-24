@@ -40,207 +40,207 @@
     </section>
 
     <section id="step-1-datasheet" class="app-step active">
-        <form id="instrumentForm">
-            <div id="form-step-1a" class="form-step-container active">
-                <h2>Paso 1.1: Datos del Instrumento y Ubicación</h2>
-                <div class="input-grid">
-                    <div class="input-group">
-                        <label for="tag">TAG del Instrumento (Obligatorio)</label>
-                        <input type="text" id="tag" required placeholder="Ej: PT-101A">
-                    </div>
-                    <div class="input-group">
-                        <label for="instrumentType">Tipo de Instrumento</label>
-                        <input type="text" id="instrumentType" placeholder="Ej: Transmisor de Presión">
-                    </div>
-                     <div class="input-group">
-                        <label for="brand">Marca</label>
-                        <input type="text" id="brand" placeholder="Ej: Rosemount">
-                    </div>
-                    <div class="input-group">
-                        <label for="model">Modelo</label>
-                        <input type="text" id="model" placeholder="Ej: 3051S">
-                    </div>
-                    <div class="input-group">
-                        <label for="serialNumber">Nº de Serie</label>
-                        <input type="text" id="serialNumber" placeholder="Ej: 123456789">
-                    </div>
-                    <div class="input-group">
-                        <label for="power">Alimentación</label>
-                        <input type="text" id="power" placeholder="Ej: 24 VDC">
-                    </div>
-                    <div class="input-group">
-                        <label for="protocol">Protocolo</label>
-                        <select id="protocol">
-                            <option value="N/A">N/A</option>
-                            <option value="4 a 20 mA">4 a 20 mA</option>
-                            <option value="Hart">Hart</option>
-                            <option value="Foundation Fieldbus">Foundation Fieldbus</option>
-                            <option value="Profibus">Profibus</option>
-                            <option value="3 a 15 psi">3 a 15 psi</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-                    <div class="input-group hidden" id="protocolOtherGroup">
-                        <label for="protocolOther">Especifique Otro Protocolo</label>
-                        <input type="text" id="protocolOther">
-                    </div>
-                    <div class="input-group">
-                        <label for="workArea">Área de Trabajo</label>
-                        <input type="text" id="workArea" placeholder="Ej: Área de Compresores">
-                    </div>
-                    <div class="input-group">
-                        <label for="lrv-wrapper">Valor Mínimo (LRV) (Obligatorio)</label>
-                        <div id="lrv" class="numeric-input-field" data-placeholder="Ej: -100 o 0" required></div>
-                    </div>
-                    <div class="input-group">
-                        <label for="urv-wrapper">Valor Máximo (URV) (Obligatorio)</label>
-                        <div id="urv" class="numeric-input-field" data-placeholder="Ej: 100" required></div>
-                    </div>
-                    <div class="input-group">
-                        <label for="pvUnit">Unidad de PV (Obligatoria)</label>
-                        <select id="pvUnit" required>
-                            <option value="" disabled selected>Seleccione una unidad...</option>
-                            <optgroup label="Presión">
-                                <option value="psi">psi</option>
-                                <option value="bar">bar</option>
-                                <option value="inH2O">inH2O</option>
-                                <option value="mmH2O">mmH2O</option>
-                                <option value="inHg">inHg</option>
-                                <option value="mmHg">mmHg</option>
-                                <option value="kPa">kPa</option>
-                                <option value="kg/cm²">kg/cm²</option>
-                            </optgroup>
-                            <optgroup label="Temperatura">
-                                <option value="°C">°C</option>
-                                <option value="°F">°F</option>
-                                <option value="K">K</option>
-                            </optgroup>
-                             <optgroup label="Flujo">
-                                <option value="GPM">GPM</option>
-                                <option value="LPM">LPM</option>
-                                <option value="m³/h">m³/h</option>
-                                <option value="ft³/h">ft³/h</option>
-                            </optgroup>
-                            <optgroup label="Nivel">
-                                <option value="%">%</option>
-                                <option value="m">m</option>
-                                <option value="cm">cm</option>
-                                <option value="ft">ft</option>
-                                <option value="in">in</option>
-                            </optgroup>
-                            <optgroup label="Otras">
-                                <option value="pH">pH</option>
-                                <option value="RPM">RPM</option>
-                                <option value="Hz">Hz</option>
-                                <option value="mA">mA</option>
-                            </optgroup>
-                            <option value="custom">Otra (especificar)...</option>
-                        </select>
-                    </div>
-                     <div class="input-group hidden" id="pvUnitOtherGroup">
-                        <label for="pvUnitOther">Especifique Otra Unidad</label>
-                        <input type="text" id="pvUnitOther">
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button type="button" id="nextBtn1" class="btn-primary">Siguiente</button>
-                </div>
-            </div>
+      <form id="instrumentForm">
+          <div id="form-step-1a" class="form-step-container active">
+              <h2>Paso 1.1: Datos del Instrumento y Ubicación</h2>
+              <div class="input-grid">
+                  <div class="input-group">
+                      <label for="tag">TAG del Instrumento (Obligatorio)</label>
+                      <input type="text" id="tag" required placeholder="Ej: PT-101A">
+                  </div>
+                  <div class="input-group">
+                      <label for="instrumentType">Tipo de Instrumento</label>
+                      <input type="text" id="instrumentType" placeholder="Ej: Transmisor de Presión">
+                  </div>
+                   <div class="input-group">
+                      <label for="brand">Marca</label>
+                      <input type="text" id="brand" placeholder="Ej: Rosemount">
+                  </div>
+                  <div class="input-group">
+                      <label for="model">Modelo</label>
+                      <input type="text" id="model" placeholder="Ej: 3051S">
+                  </div>
+                  <div class="input-group">
+                      <label for="serialNumber">Nº de Serie</label>
+                      <input type="text" id="serialNumber" placeholder="Ej: 123456789">
+                  </div>
+                  <div class="input-group">
+                      <label for="power">Alimentación</label>
+                      <input type="text" id="power" placeholder="Ej: 24 VDC">
+                  </div>
+                  <div class="input-group">
+                      <label for="protocol">Protocolo</label>
+                      <select id="protocol">
+                          <option value="N/A">N/A</option>
+                          <option value="4 a 20 mA">4 a 20 mA</option>
+                          <option value="Hart">Hart</option>
+                          <option value="Foundation Fieldbus">Foundation Fieldbus</option>
+                          <option value="Profibus">Profibus</option>
+                          <option value="3 a 15 psi">3 a 15 psi</option>
+                          <option value="Otro">Otro</option>
+                      </select>
+                  </div>
+                  <div class="input-group hidden" id="protocolOtherGroup">
+                      <label for="protocolOther">Especifique Otro Protocolo</label>
+                      <input type="text" id="protocolOther">
+                  </div>
+                  <div class="input-group">
+                      <label for="workArea">Área de Trabajo</label>
+                      <input type="text" id="workArea" placeholder="Ej: Área de Compresores">
+                  </div>
+                  <div class="input-group">
+                      <label for="lrv-wrapper">Valor Mínimo (LRV) (Obligatorio)</label>
+                      <div id="lrv" class="numeric-input-field" data-placeholder="Ej: -100 o 0" required></div>
+                  </div>
+                  <div class="input-group">
+                      <label for="urv-wrapper">Valor Máximo (URV) (Obligatorio)</label>
+                      <div id="urv" class="numeric-input-field" data-placeholder="Ej: 100" required></div>
+                  </div>
+                  <div class="input-group">
+                      <label for="pvUnit">Unidad de PV (Obligatoria)</label>
+                      <select id="pvUnit" required>
+                          <option value="" disabled selected>Seleccione una unidad...</option>
+                          <optgroup label="Presión">
+                              <option value="psi">psi</option>
+                              <option value="bar">bar</option>
+                              <option value="inH2O">inH2O</option>
+                              <option value="mmH2O">mmH2O</option>
+                              <option value="inHg">inHg</option>
+                              <option value="mmHg">mmHg</option>
+                              <option value="kPa">kPa</option>
+                              <option value="kg/cm²">kg/cm²</option>
+                          </optgroup>
+                          <optgroup label="Temperatura">
+                              <option value="°C">°C</option>
+                              <option value="°F">°F</option>
+                              <option value="K">K</option>
+                          </optgroup>
+                           <optgroup label="Flujo">
+                              <option value="GPM">GPM</option>
+                              <option value="LPM">LPM</option>
+                              <option value="m³/h">m³/h</option>
+                              <option value="ft³/h">ft³/h</option>
+                          </optgroup>
+                          <optgroup label="Nivel">
+                              <option value="%">%</option>
+                              <option value="m">m</option>
+                              <option value="cm">cm</option>
+                              <option value="ft">ft</option>
+                              <option value="in">in</option>
+                          </optgroup>
+                          <optgroup label="Otras">
+                              <option value="pH">pH</option>
+                              <option value="RPM">RPM</option>
+                              <option value="Hz">Hz</option>
+                              <option value="mA">mA</option>
+                          </optgroup>
+                          <option value="custom">Otra (especificar)...</option>
+                      </select>
+                  </div>
+                   <div class="input-group hidden" id="pvUnitOtherGroup">
+                      <label for="pvUnitOther">Especifique Otra Unidad</label>
+                      <input type="text" id="pvUnitOther">
+                  </div>
+              </div>
+              <div class="button-group">
+                  <button type="button" id="nextBtn1" class="btn-primary">Siguiente</button>
+              </div>
+          </div>
 
-            <div id="form-step-1b" class="form-step-container">
-                <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
-                <div class="input-grid">
-                    <div class="input-group">
-                        <label for="executingCompany">Empresa Ejecutora</label>
-                        <input type="text" id="executingCompany" placeholder="Nombre de su empresa">
-                    </div>
-                    <div class="input-group">
-                        <label for="workOrder">Orden de Trabajo</label>
-                        <input type="text" id="workOrder" placeholder="Ej: OT-2025-001">
-                    </div>
-                     <div class="input-group">
-                        <label for="testType">Lugar de la Prueba</label>
-                        <select id="testType">
-                            <option value="En Taller">En Taller</option>
-                            <option value="En Campo">En Campo</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="testCondition">Condición de la Prueba</label>
-                        <select id="testCondition">
-                            <option value="As-Found">As-Found (Tal como se encontró)</option>
-                            <option value="As-Left">As-Left (Tal como se dejó)</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="clientType">Cliente</label>
-                        <select id="clientType">
-                            <option value="Interno">Interno</option>
-                            <option value="Externo">Externo</option>
-                        </select>
-                    </div>
-                    <div class="input-group hidden" id="clientNameGroup">
-                        <label for="clientName">Nombre del Cliente Externo</label>
-                        <input type="text" id="clientName" placeholder="Nombre de la empresa cliente">
-                    </div>
-                    <div class="input-group">
-                        <label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label>
-                        <div id="permissibleError" class="numeric-input-field" required>1.0</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="calibrator">Equipo de Calibración (Patrón)</label>
-                        <input type="text" id="calibrator" placeholder="Ej: Fluke 754">
-                    </div>
-                     <div class="input-group">
-                        <label for="calibratorSerialNumber">Nº de Serie del Patrón</label>
-                        <input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321">
-                    </div>
-                    <div class="input-group">
-                        <label for="calibratorLastCal">Última Calibración del Patrón</label>
-                        <input type="date" id="calibratorLastCal">
-                    </div>
-                    <div class="input-group">
-                        <label for="calibratorCalDue">Vencimiento Calibración del Patrón</label>
-                        <input type="date" id="calibratorCalDue">
-                    </div>
-                     <div class="input-group">
-                        <label for="technician">Técnico Ejecutante</label>
-                        <input type="text" id="technician" placeholder="Nombre del técnico">
-                    </div>
-                    <div class="input-group">
-                        <label for="workLead">Responsable del Trabajo</label>
-                        <input type="text" id="workLead" placeholder="Nombre del responsable">
-                    </div>
-                    <div class="input-group">
-                        <label for="supervisor">Supervisor de Operaciones</label>
-                        <input type="text" id="supervisor" placeholder="Nombre del supervisor">
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button type="button" id="backBtn1" class="btn-secondary">Atrás</button>
-                    <button type="button" id="nextBtn2" class="btn-primary">Siguiente</button>
-                </div>
-            </div>
-            
-            <div id="form-step-1c" class="form-step-container">
-                <h2>Paso 1.3: Personalización del Reporte (Opcional)</h2>
-                <div class="input-group">
-                    <label for="logoInput">Cargar Logo de la Empresa</label>
-                    <div id="logo-upload-container">
-                        <p>Haga clic aquí para seleccionar un archivo (.jpg, .png)</p>
-                    </div>
-                    <input type="file" id="logoInput" class="hidden" accept="image/png, image/jpeg">
-                    <div id="logo-preview-container" class="hidden">
-                        <img id="logo-preview" src="#" alt="Vista previa del logo">
-                        <button type="button" id="removeLogoBtn" class="btn-secondary" style="margin-top: 1rem;">Quitar Logo</button>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button type="button" id="backBtn2" class="btn-secondary">Atrás</button>
-                    <button type="submit" class="btn-primary">Iniciar Calibración</button>
-                </div>
-            </div>
-        </form>
+          <div id="form-step-1b" class="form-step-container">
+              <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
+              <div class="input-grid">
+                  <div class="input-group">
+                      <label for="executingCompany">Empresa Ejecutora</label>
+                      <input type="text" id="executingCompany" placeholder="Nombre de su empresa">
+                  </div>
+                  <div class="input-group">
+                      <label for="workOrder">Orden de Trabajo</label>
+                      <input type="text" id="workOrder" placeholder="Ej: OT-2025-001">
+                  </div>
+                   <div class="input-group">
+                      <label for="testType">Lugar de la Prueba</label>
+                      <select id="testType">
+                          <option value="En Taller">En Taller</option>
+                          <option value="En Campo">En Campo</option>
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label for="testCondition">Condición de la Prueba</label>
+                      <select id="testCondition">
+                          <option value="As-Found">As-Found (Tal como se encontró)</option>
+                          <option value="As-Left">As-Left (Tal como se dejó)</option>
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label for="clientType">Cliente</label>
+                      <select id="clientType">
+                          <option value="Interno">Interno</option>
+                          <option value="Externo">Externo</option>
+                      </select>
+                  </div>
+                  <div class="input-group hidden" id="clientNameGroup">
+                      <label for="clientName">Nombre del Cliente Externo</label>
+                      <input type="text" id="clientName" placeholder="Nombre de la empresa cliente">
+                  </div>
+                  <div class="input-group">
+                      <label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label>
+                      <div id="permissibleError" class="numeric-input-field" required>1.0</div>
+                  </div>
+                  <div class="input-group">
+                      <label for="calibrator">Equipo de Calibración (Patrón)</label>
+                      <input type="text" id="calibrator" placeholder="Ej: Fluke 754">
+                  </div>
+                   <div class="input-group">
+                      <label for="calibratorSerialNumber">Nº de Serie del Patrón</label>
+                      <input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321">
+                  </div>
+                  <div class="input-group">
+                      <label for="calibratorLastCal">Última Calibración del Patrón</label>
+                      <input type="date" id="calibratorLastCal">
+                  </div>
+                  <div class="input-group">
+                      <label for="calibratorCalDue">Vencimiento Calibración del Patrón</label>
+                      <input type="date" id="calibratorCalDue">
+                  </div>
+                   <div class="input-group">
+                      <label for="technician">Técnico Ejecutante</label>
+                      <input type="text" id="technician" placeholder="Nombre del técnico">
+                  </div>
+                  <div class="input-group">
+                      <label for="workLead">Responsable del Trabajo</label>
+                      <input type="text" id="workLead" placeholder="Nombre del responsable">
+                  </div>
+                  <div class="input-group">
+                      <label for="supervisor">Supervisor de Operaciones</label>
+                      <input type="text" id="supervisor" placeholder="Nombre del supervisor">
+                  </div>
+              </div>
+              <div class="button-group">
+                  <button type="button" id="backBtn1" class="btn-secondary">Atrás</button>
+                  <button type="button" id="nextBtn2" class="btn-primary">Siguiente</button>
+              </div>
+          </div>
+          
+          <div id="form-step-1c" class="form-step-container">
+              <h2>Paso 1.3: Personalización del Reporte (Opcional)</h2>
+              <div class="input-group">
+                  <label for="logoInput">Cargar Logo de la Empresa</label>
+                  <div id="logo-upload-container">
+                      <p>Haga clic aquí para seleccionar un archivo (.jpg, .png)</p>
+                  </div>
+                  <input type="file" id="logoInput" class="hidden" accept="image/png, image/jpeg">
+                  <div id="logo-preview-container" class="hidden">
+                      <img id="logo-preview" src="#" alt="Vista previa del logo">
+                      <button type="button" id="removeLogoBtn" class="btn-secondary" style="margin-top: 1rem;">Quitar Logo</button>
+                  </div>
+              </div>
+              <div class="button-group">
+                  <button type="button" id="backBtn2" class="btn-secondary">Atrás</button>
+                  <button type="submit" class="btn-primary">Iniciar Calibración</button>
+              </div>
+          </div>
+      </form>
     </section>
 
     <section id="step-2-calibration" class="app-step">
@@ -331,6 +331,7 @@
       </div>
   </div>
   
+  <script src="dbManager.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
