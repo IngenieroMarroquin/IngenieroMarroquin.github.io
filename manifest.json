@@ -1,8 +1,10 @@
 {
-  "name": "SignalCheck PRO",
+  "name": "SignalCheck Pro 4.0",
   "short_name": "SignalCheck",
   "description": "Herramienta de Calibración y Certificación de Instrumentos.",
-  "start_url": "/",
+  "id": "/?v=4",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#1c2331",
   "theme_color": "#2a384c",
