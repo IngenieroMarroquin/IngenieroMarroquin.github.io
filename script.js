@@ -670,7 +670,6 @@ function initializeMainApp() {
         prepareCalibrationStep();
         navigateToAppStep('step2');
     });
-    // --- Bloque de código del Teclado Restaurado y Corregido ---
     document.querySelectorAll('.numeric-input-field').forEach(field => {
         field.addEventListener('click', (e) => {
             document.querySelectorAll('.numeric-input-field.active-input').forEach(el => el.classList.remove('active-input'));
@@ -712,11 +711,43 @@ document.addEventListener('DOMContentLoaded', () => {
     checkLicenseAndInitialize();
 });
 
-// --- REGISTRO DEL SERVICE WORKER ---
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+// --- SISTEMA DE REGISTRO Y ACTUALIZACIÓN DEL SERVICE WORKER ---
+function registerSW() {
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
-      .then(r => console.log('Service Worker registrado:', r))
-      .catch(e => console.log('Fallo en registro de SW:', e));
-  });
+      .then(registration => {
+        console.log('Service Worker registrado:', registration);
+
+        // Lógica para detectar y manejar actualizaciones
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nueva versión lista para ser activada. Mostramos la notificación.
+              const updateNotification = document.getElementById('update-notification');
+              const updateBtn = document.getElementById('update-btn');
+              
+              updateNotification.classList.remove('hidden');
+              updateBtn.addEventListener('click', () => {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              });
+            }
+          });
+        });
+      })
+      .catch(error => {
+        console.log('Fallo en registro de SW:', error);
+      });
+
+    let refreshing;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        window.location.reload();
+        refreshing = true;
+      }
+    });
+  }
 }
+
+// Llamamos a la función de registro al cargar la página.
+registerSW();
