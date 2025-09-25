@@ -52,9 +52,10 @@ table td { background-color: var(--bg-color); }
 #logo-upload-container:hover { background-color: #3c4b60; border-color: var(--accent-color); }
 #logo-preview-container { max-width: 250px; margin: 0 auto; }
 #logo-preview-container img { display: block; max-width: 100%; height: auto; max-height: 150px; margin: 0 auto; border-radius: var(--border-radius); border: 1px solid #4a5c71; }
-.date-field-container { display: flex; align-items: center; gap: 0.5rem; }
-.date-field-container .numeric-input-field { flex-grow: 1; }
-.calendar-icon { font-size: 1.5rem; color: var(--secondary-text-color); }
+.date-field-container { display: flex; align-items: center; gap: 0.5rem; border: 1px solid #4a5c71; border-radius: 4px; padding-right: 0.75rem; }
+.date-field-container .numeric-input-field { flex-grow: 1; border: none; }
+.date-field-container .numeric-input-field.active-input { box-shadow: none; }
+.calendar-icon { font-size: 1.2rem; color: var(--secondary-text-color); }
 #update-notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--primary-button-bg); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 1.5rem; z-index: 1000; font-weight: bold; }
 #update-notification.hidden { display: none; }
 #update-btn { background-color: white; color: var(--primary-button-bg); padding: 0.5rem 1rem; }
