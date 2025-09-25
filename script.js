@@ -97,7 +97,9 @@ async function initializeMainApp() {
         doc.setFontSize(8); doc.setTextColor(100); doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
         doc.addPage(); finalY = 15;
         doc.setFontSize(11); doc.text("4. Conclusión y Gráfico de Linealidad", 14, finalY); finalY += 6;
-        doc.setFontSize(10); doc.setTextColor(isOk ? 40 : 220, isOk ? 167 : 53, isOk ? 69 : 69);
+        doc.setFontSize(10); 
+        const resultColor = isOk ? [40, 167, 69] : [220, 53, 69];
+        doc.setTextColor(resultColor[0], resultColor[1], resultColor[2]);
         doc.text(`Resultado General: ${isOk ? 'APROBADO' : 'RECHAZADO'}`, 14, finalY);
         doc.setTextColor(0, 0, 0); finalY += 8;
         const offscreenContainer = document.createElement('div'); offscreenContainer.style.position = 'absolute'; offscreenContainer.style.left = '-9999px'; offscreenContainer.style.width = '800px'; offscreenContainer.style.height = '450px'; const offscreenCanvas = document.createElement('canvas'); offscreenContainer.appendChild(offscreenCanvas); document.body.appendChild(offscreenContainer);
@@ -111,7 +113,22 @@ async function initializeMainApp() {
         doc.setFontSize(8); doc.setTextColor(100); doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
         doc.save(`Reporte_Calibracion_${instrumentData.tag}.pdf`);
         if (stateToUse === calibrationState) {
-            try { const reportMetadata = { tag: instrumentData.tag, date: new Date().toISOString(), client: instrumentData.clientName || sessionState.executingCompany || 'Interno', result: isOk ? 'APROBADO' : 'RECHAZADO', pdfFileName: `Reporte_Calibracion_${instrumentData.tag}.pdf`, fullState: JSON.parse(JSON.stringify(stateToUse)) }; await window.dbManager.addReport(reportMetadata); console.log('Metadatos del reporte guardados en el historial offline.'); } catch (error) { console.error('Error al guardar el reporte en el historial offline:', error); }
+            try { 
+                const stateToSave = JSON.parse(JSON.stringify(stateToUse));
+                delete stateToSave.chart; // Elimina la propiedad del gráfico antes de guardar
+                const reportMetadata = { 
+                    tag: instrumentData.tag, 
+                    date: new Date().toISOString(), 
+                    client: instrumentData.clientName || sessionState.executingCompany || 'Interno', 
+                    result: isOk ? 'APROBADO' : 'RECHAZADO', 
+                    pdfFileName: `Reporte_Calibracion_${instrumentData.tag}.pdf`, 
+                    fullState: stateToSave 
+                }; 
+                await window.dbManager.addReport(reportMetadata); 
+                console.log('Metadatos del reporte guardados en el historial offline.'); 
+            } catch (error) { 
+                console.error('Error al guardar el reporte en el historial offline:', error); 
+            }
         }
     }
     
@@ -122,7 +139,7 @@ async function initializeMainApp() {
     if(homeBtn1) homeBtn1.addEventListener('click', () => navigateToAppStep('home'));
     clearSearchBtn.addEventListener('click', () => { searchTagInput.value = ''; searchDateInput.value = ''; renderHistory(); });
     searchTagInput.addEventListener('input', () => renderHistory({ tag: searchTagInput.value, date: searchDateInput.value }));
-    searchDateInput.addEventListener('change', () => renderHistory({ tag: searchTagInput.value, date: searchDateInput.value }));
+    searchDateInput.addEventListener('change', () => renderHistory({ tag: searchDateInput.value, date: searchDateInput.value }));
     deleteAllHistoryBtn.addEventListener('click', async () => { if (confirm('¿Está seguro de que desea borrar TODO el historial? Esta acción no se puede deshacer.')) { await window.dbManager.clearAllReports(); await loadAndRenderHistory(); await updateDashboardSummary(); } });
     historyListContainer.addEventListener('click', async (e) => {
         const reportItem = e.target.closest('.history-item');
@@ -156,7 +173,6 @@ async function initializeMainApp() {
     if (removeLogoBtn) removeLogoBtn.addEventListener('click', () => { sessionState.companyLogo = null; logoInput.value = ''; logoPreviewContainer.classList.add('hidden'); logoUploadContainer.classList.remove('hidden'); });
     if (instrumentForm) instrumentForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        if(!validateFormStep('1a') || !validateFormStep('1b') || !validateFormStep('1c')) return;
         let protocolValue = sanitizeHTML(document.getElementById('protocol').value);
         if (protocolValue === 'Otro') protocolValue = sanitizeHTML(document.getElementById('protocolOther').value);
         let pvUnitValue = sanitizeHTML(document.getElementById('pvUnit').value);
@@ -168,7 +184,7 @@ async function initializeMainApp() {
     document.querySelectorAll('.numeric-input-field').forEach(field => { field.addEventListener('click', (e) => { document.querySelectorAll('.numeric-input-field.active-input').forEach(el => el.classList.remove('active-input')); activeNumericInput = e.currentTarget; activeNumericInput.classList.add('active-input'); updateCursor(); customKeyboard.classList.add('visible'); setTimeout(() => { scrollToActiveInput(activeNumericInput); }, 300); }); });
     if (customKeyboard) customKeyboard.addEventListener('click', (e) => { if (!e.target.matches('.keyboard-btn') || !activeNumericInput) return; const key = e.target.dataset.key; let value = activeNumericInput.textContent.replace(/<span class="cursor"><\/span>/g, ''); switch (key) { case 'ok': customKeyboard.classList.remove('visible'); if (activeNumericInput) activeNumericInput.classList.remove('active-input'); if (cursorSpan) cursorSpan.remove(); activeNumericInput = null; cursorSpan = null; return; case 'backspace': value = value.slice(0, -1); break; case '.': if (!value.includes('.')) value += '.'; break; case '-': if (value.length === 0) value += '-'; break; default: value += key; break; } activeNumericInput.innerHTML = ''; activeNumericInput.textContent = value; updateCursor(); });
     
-    updateDashboardSummary();
+    await updateDashboardSummary();
 }
 document.addEventListener('DOMContentLoaded', () => { const activateBtn = document.getElementById('activateBtn'); if (activateBtn) activateBtn.addEventListener('click', handleActivation); checkLicenseAndInitialize(); });
 function registerSW() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').then(registration => { console.log('Service Worker registrado:', registration); registration.addEventListener('updatefound', () => { const newWorker = registration.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { const updateNotification = document.getElementById('update-notification'); const updateBtn = document.getElementById('update-btn'); if (updateNotification && updateBtn) { updateNotification.classList.remove('hidden'); updateBtn.onclick = () => { newWorker.postMessage({ type: 'SKIP_WAITING' }); let refreshing; navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; window.location.reload(); refreshing = true; }); }; } } }); }); }).catch(error => { console.log('Fallo en registro de SW:', error); }); } }
