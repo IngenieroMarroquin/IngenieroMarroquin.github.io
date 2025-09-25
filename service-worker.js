@@ -1,4 +1,4 @@
-const CACHE_NAME = 'signalcheck-pro-v4'; // Aumentamos la versión para forzar la actualización
+const CACHE_NAME = 'signalcheck-pro-v4'; 
 const urlsToCache = [
   '/',
   'index.html',
@@ -48,8 +48,14 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Estrategia "Stale-While-Revalidate"
+// Estrategia "Stale-While-Revalidate" con filtro de seguridad
 self.addEventListener('fetch', event => {
+  // CORRECCIÓN: Si la petición no es para un recurso web estándar (http/https),
+  // no la procesamos y dejamos que el navegador la maneje normalmente.
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(response => {
