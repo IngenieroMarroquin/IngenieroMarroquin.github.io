@@ -88,9 +88,11 @@ async function initializeMainApp() {
     function prepareReportStep() { const { tag } = calibrationState.instrumentData; const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA)); document.getElementById('summary-tag').textContent = tag; document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES'); const resultSpan = document.getElementById('summary-result'); resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)'; resultSpan.className = isOk ? 'error-ok' : 'error-fail'; document.getElementById('summary-equation').textContent = calibrationState.equation.formatted; document.getElementById('summary-equation').classList.remove('hidden'); updateChart(); }
     function getChartConfig(stateToUse) { const { instrumentData, calibrationData } = stateToUse; const { lrv, urv, pvUnit } = instrumentData; const measuredData = calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationData.measured_mA[i] })); return { type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] }, options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } } }; }
     function updateChart() { if (calibrationState.chart) { calibrationState.chart.destroy(); calibrationState.chart = null; } const ctx = document.getElementById('chart').getContext('2d'); calibrationState.chart = new Chart(ctx, getChartConfig(calibrationState)); }
-    async function generatePDF(stateToUse = calibrationState) {
+    
+    // --- FUNCIÓN generatePDF MODIFICADA ---
+    async function generatePDF(stateForPdf, stateToSaveFinal = null) {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateToUse;
+        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateForPdf;
         const isOk = calibrationData.errors_mA.every(e => isWithinTolerance(e, errorThreshold_mA));
         let finalY = 10;
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -122,7 +124,8 @@ async function initializeMainApp() {
         doc.text(`Resultado General: ${isOk ? 'APROBADO' : 'RECHAZADO'}`, 14, finalY);
         doc.setTextColor(0, 0, 0); finalY += 8;
         const offscreenContainer = document.createElement('div'); offscreenContainer.style.position = 'absolute'; offscreenContainer.style.left = '-9999px'; offscreenContainer.style.width = '800px'; offscreenContainer.style.height = '450px'; const offscreenCanvas = document.createElement('canvas'); offscreenContainer.appendChild(offscreenCanvas); document.body.appendChild(offscreenContainer);
-        const chartConfig = getChartConfig(stateToUse); chartConfig.options.animation = false; const tempChart = new Chart(offscreenCanvas.getContext('2d'), chartConfig); await new Promise(resolve => setTimeout(resolve, 200)); const chartImage = tempChart.toBase64Image(); tempChart.destroy(); document.body.removeChild(offscreenContainer);
+        const chartConfig = getChartConfig(stateForPdf); // Usar stateForPdf aquí
+        chartConfig.options.animation = false; const tempChart = new Chart(offscreenCanvas.getContext('2d'), chartConfig); await new Promise(resolve => setTimeout(resolve, 200)); const chartImage = tempChart.toBase64Image(); tempChart.destroy(); document.body.removeChild(offscreenContainer);
         const pageWidth = doc.internal.pageSize.getWidth(); const chartWidth = pageWidth - 28; const chartHeight = (chartWidth * 450) / 800; doc.addImage(chartImage, 'PNG', 14, finalY, chartWidth, chartHeight); finalY += chartHeight + 8;
         doc.setFont('courier', 'bold'); doc.setFontSize(9); doc.text(equation.formatted, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); doc.setFont('helvetica', 'normal'); finalY += 8;
         doc.setFontSize(9); doc.setTextColor(80); const margin = 14; const textWidth = doc.internal.pageSize.getWidth() - (margin * 2); let analysisText = isOk ? `Análisis de Resultados: La desviación máxima registrada durante la prueba se encuentra dentro de la tolerancia de ±${instrumentData.permissibleError}% del span configurado. El instrumento demuestra una respuesta lineal y una exactitud consistentes con las especificaciones del fabricante para su operación nominal.` : `Análisis de Resultados: Se ha identificado una desviación en uno o más puntos de la prueba que excede la tolerancia máxima permisible de ±${instrumentData.permissibleError}% del span. Se recomienda una intervención de ajuste (trimming) y una subsecuente verificación (As-Left) para restablecer la exactitud del instrumento a los parámetros operacionales requeridos.`; const splitText = doc.splitTextToSize(analysisText, textWidth); doc.text(splitText, margin, finalY); doc.setTextColor(0, 0, 0);
@@ -130,18 +133,19 @@ async function initializeMainApp() {
         const signatureBody = [['_________________________\n\n' + (instrumentData.technician || ''), '_________________________\n\n' + (instrumentData.workLead || ''), '_________________________\n\n' + (instrumentData.supervisor || '')], [{ content: 'TÉCNICO EJECUTANTE', styles: { fontStyle: 'bold' } }, { content: 'RESPONSABLE DEL TRABAJO', styles: { fontStyle: 'bold' } }, { content: 'SUPERVISOR DE OPERACIONES', styles: { fontStyle: 'bold' } }]];
         doc.autoTable({ ...tableStyles, styles: { ...tableStyles.styles, halign: 'center' }, startY: signatureY, theme: 'plain', margin: { left: 14, right: 14 }, body: signatureBody });
         doc.setFontSize(8); doc.setTextColor(100); doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
+        
         doc.save(`Reporte_Calibracion_${instrumentData.tag}.pdf`);
-        if (stateToUse === calibrationState) {
+
+        if (stateToSaveFinal) { // Solo guarda si se pasó el estado para guardar
             try {
-                const stateToSave = JSON.parse(JSON.stringify(stateToUse));
-                delete stateToSave.chart; // Elimina la propiedad del gráfico antes de guardar
+                const finalInstrumentData = stateToSaveFinal.instrumentData;
                 const reportMetadata = {
-                    tag: instrumentData.tag,
+                    tag: finalInstrumentData.tag,
                     date: new Date().toISOString(),
-                    client: instrumentData.clientName || sessionState.executingCompany || 'Interno',
+                    client: finalInstrumentData.clientName || sessionState.executingCompany || 'Interno',
                     result: isOk ? 'APROBADO' : 'RECHAZADO',
-                    pdfFileName: `Reporte_Calibracion_${instrumentData.tag}.pdf`,
-                    fullState: stateToSave
+                    pdfFileName: `Reporte_Calibracion_${finalInstrumentData.tag}.pdf`,
+                    fullState: stateToSaveFinal
                 };
                 await window.dbManager.addReport(reportMetadata);
                 console.log('Metadatos del reporte guardados en el historial offline.');
@@ -167,16 +171,13 @@ async function initializeMainApp() {
         if (e.target.classList.contains('btn-delete-report')) {
             if (confirm('¿Está seguro de que desea borrar este reporte?')) { await window.dbManager.deleteReport(reportId); await loadAndRenderHistory(); await updateDashboardSummary(); }
         } else {
-            // ---> INICIO DE LA MODIFICACIÓN <---
             const originalText = reportItem.innerHTML;
             reportItem.innerHTML = `<div class="history-item-info"><span>Generando reporte...</span></div><div class="spinner"></div>`;
-            reportItem.style.pointerEvents = 'none'; // Deshabilitar más clics
-            // ---> FIN DE LA MODIFICACIÓN <---
-
+            reportItem.style.pointerEvents = 'none';
             try {
                 const report = await window.dbManager.getReportById(reportId);
                 if (report && report.fullState) {
-                    await generatePDF(report.fullState);
+                    await generatePDF(report.fullState); // No se pasa el segundo argumento
                 } else {
                     alert('No se pudieron recuperar los datos completos para re-generar este reporte.');
                 }
@@ -184,9 +185,8 @@ async function initializeMainApp() {
                 console.error("Error al re-generar PDF:", error);
                 alert("Ocurrió un error al intentar generar el reporte.");
             } finally {
-                // ---> Devolvemos el item a su estado original <---
                 reportItem.innerHTML = originalText;
-                reportItem.style.pointerEvents = 'auto'; // Habilitar clics de nuevo
+                reportItem.style.pointerEvents = 'auto';
             }
         }
     });
@@ -197,7 +197,19 @@ async function initializeMainApp() {
     if (backToStep1Btn) backToStep1Btn.addEventListener('click', () => navigateToFormStep('1a'));
     if (validateBtn) validateBtn.addEventListener('click', () => { if (!isValidated) { if (validateMeasuredInputs()) { calculateAndDisplayErrors(); isValidated = true; validateBtn.textContent = 'Continuar'; resetMeasurementBtn.disabled = true; backToStep1Btn.disabled = true; } } else { prepareReportStep(); navigateToAppStep('step3'); } });
     if (resetMeasurementBtn) resetMeasurementBtn.addEventListener('click', () => { document.querySelectorAll('.measured-input').forEach(input => input.textContent = ''); document.querySelectorAll('#error-values-row td:not(:first-child)').forEach(cell => { cell.textContent = '-'; cell.classList.remove('error-ok', 'error-fail'); }); document.getElementById('error-values-row').classList.add('hidden'); hideError(); });
-    if (generatePdfBtn) generatePdfBtn.addEventListener('click', () => generatePDF(calibrationState));
+    
+    // --- LLAMADA AL generatePDF MODIFICADA ---
+    if (generatePdfBtn) generatePdfBtn.addEventListener('click', () => {
+        // Se crea una copia profunda para el PDF y otra para la BD
+        const stateForPdf = JSON.parse(JSON.stringify(calibrationState));
+        delete stateForPdf.chart;
+        
+        const stateToSave = JSON.parse(JSON.stringify(calibrationState));
+        delete stateToSave.chart;
+
+        generatePDF(stateForPdf, stateToSave);
+    });
+
     if (fullResetBtn) fullResetBtn.addEventListener('click', () => { softReset(); updateDashboardSummary(); navigateToAppStep('home'); });
     if (clientTypeSelect) clientTypeSelect.addEventListener('change', () => { document.getElementById('clientNameGroup').classList.toggle('hidden', clientTypeSelect.value !== 'Externo'); });
     if (protocolSelect) protocolSelect.addEventListener('change', () => { document.getElementById('protocolOtherGroup').classList.toggle('hidden', protocolSelect.value !== 'Otro'); });
@@ -219,6 +231,17 @@ async function initializeMainApp() {
     if (customKeyboard) customKeyboard.addEventListener('click', (e) => { if (!e.target.matches('.keyboard-btn') || !activeNumericInput) return; const key = e.target.dataset.key; let value = activeNumericInput.textContent.replace(/<span class="cursor"><\/span>/g, ''); switch (key) { case 'ok': customKeyboard.classList.remove('visible'); if (activeNumericInput) activeNumericInput.classList.remove('active-input'); if (cursorSpan) cursorSpan.remove(); activeNumericInput = null; cursorSpan = null; return; case 'backspace': value = value.slice(0, -1); break; case '.': if (!value.includes('.')) value += '.'; break; case '-': if (value.length === 0) value += '-'; break; default: value += key; break; } activeNumericInput.innerHTML = ''; activeNumericInput.textContent = value; updateCursor(); });
     
     await updateDashboardSummary();
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (calibrationState && calibrationState.chart) {
+                console.log('Redimensionando gráfico para nuevo tamaño de pantalla.');
+                updateChart();
+            }
+        }, 250);
+    });
 }
 document.addEventListener('DOMContentLoaded', () => { const activateBtn = document.getElementById('activateBtn'); if (activateBtn) activateBtn.addEventListener('click', handleActivation); checkLicenseAndInitialize(); });
 function registerSW() { if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/service-worker.js').then(registration => { console.log('Service Worker registrado:', registration); registration.addEventListener('updatefound', () => { const newWorker = registration.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { const updateNotification = document.getElementById('update-notification'); const updateBtn = document.getElementById('update-btn'); if (updateNotification && updateBtn) { updateNotification.classList.remove('hidden'); updateBtn.onclick = () => { newWorker.postMessage({ type: 'SKIP_WAITING' }); let refreshing; navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; window.location.reload(); refreshing = true; }); }; } } }); }); }).catch(error => { console.log('Fallo en registro de SW:', error); }); } }
