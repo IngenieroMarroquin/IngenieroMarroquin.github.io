@@ -722,7 +722,7 @@ function registerSW() {
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            if (newWorker.state === 'installed' && navigator.service-worker.controller) {
               // Nueva versión lista para ser activada. Mostramos la notificación.
               const updateNotification = document.getElementById('update-notification');
               const updateBtn = document.getElementById('update-btn');
