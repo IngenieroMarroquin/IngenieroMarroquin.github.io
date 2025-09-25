@@ -69,7 +69,6 @@ function checkLicenseAndInitialize() {
     const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)');
     if (licenseStatus === 'VALID') {
         activationStep.style.display = 'none';
-        appSections.forEach(step => step.style.display = 'block');
         document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active'));
         document.getElementById('step-home').classList.add('active');
         initializeMainApp();
