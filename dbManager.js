@@ -52,6 +52,17 @@
                 request.onerror = (event) => reject(event.target.error);
             });
         },
+        // --- NUEVA FUNCIÓN AÑADIDA ---
+        getReportById: async function(id) {
+            const dbInstance = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(id);
+                request.onsuccess = (event) => resolve(event.target.result);
+                request.onerror = (event) => reject(event.target.error);
+            });
+        },
         deleteReport: async function(reportId) {
             const dbInstance = await initDB();
             return new Promise((resolve, reject) => {
