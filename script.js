@@ -29,37 +29,22 @@ async function handleActivation() {
     const activateBtn = document.getElementById('activateBtn');
     const licenseKeyInput = document.getElementById('licenseKey');
     const licenseKey = licenseKeyInput.value.trim().toUpperCase();
-
-    if (!licenseKey) {
-        showActivationError('Por favor, introduce una clave de licencia.');
-        return;
-    }
-
+    if (!licenseKey) { showActivationError('Por favor, introduce una clave de licencia.'); return; }
     activateBtn.classList.add('loading');
     activateBtn.disabled = true;
     hideActivationError();
-
     try {
         const fingerprint = await generateFingerprint();
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ licenseKey, fingerprint })
-        });
+        const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licenseKey, fingerprint }) });
         const data = await response.json();
-
         if (response.ok && data.success) {
             localStorage.setItem(LICENSE_STORAGE_KEY, 'VALID');
             activateBtn.classList.remove('loading');
-            
             const newButton = activateBtn.cloneNode(true);
             newButton.textContent = 'Ingresa a SignalCheck PRO';
             newButton.style.backgroundColor = 'var(--export-button-bg)';
             activateBtn.parentNode.replaceChild(newButton, activateBtn);
-            
-            newButton.addEventListener('click', () => {
-                window.location.reload();
-            });
+            newButton.addEventListener('click', () => { window.location.reload(); });
             newButton.disabled = false;
         } else {
             showActivationError(data.message || 'Error desconocido.');
@@ -76,58 +61,62 @@ async function handleActivation() {
 
 function showActivationError(message) {
     const activationErrorDiv = document.getElementById('activation-error-message');
-    if (activationErrorDiv) {
-        activationErrorDiv.textContent = message;
-        activationErrorDiv.classList.remove('hidden');
-    }
+    if (activationErrorDiv) { activationErrorDiv.textContent = message; activationErrorDiv.classList.remove('hidden'); }
 }
 
 function hideActivationError() {
     const activationErrorDiv = document.getElementById('activation-error-message');
-    if (activationErrorDiv) {
-        activationErrorDiv.classList.add('hidden');
-    }
+    if (activationErrorDiv) { activationErrorDiv.classList.add('hidden'); }
 }
 
 function checkLicenseAndInitialize() {
     const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY);
     const activationStep = document.getElementById('step-0-activation');
-    const mainAppSteps = document.querySelectorAll('#step-1-datasheet, #step-2-calibration, #step-3-report, #step-home, #step-4-history');
+    const mainAppSteps = document.querySelectorAll('.app-step');
 
     if (licenseStatus === 'VALID') {
         activationStep.style.display = 'none';
-        mainAppSteps.forEach(step => step.style.display = '');
-        document.getElementById('step-home').classList.add('active'); // Inicia en el nuevo Panel de Control
+        mainAppSteps.forEach(step => {
+            if (step.id !== 'step-home') {
+                step.classList.remove('active');
+            }
+        });
+        document.getElementById('step-home').classList.add('active');
         initializeMainApp();
     } else {
         activationStep.style.display = 'block';
         activationStep.classList.add('active');
-        mainAppSteps.forEach(step => step.style.display = 'none');
     }
 }
 
 // --- CONTENEDOR PRINCIPAL DE LA APLICACIÓN ---
-function initializeMainApp() {
+async function initializeMainApp() {
     
-    // --- VARIABLES Y SELECTORES DEL DOM (ENCAPSULADOS) ---
+    // --- VARIABLES Y SELECTORES DEL DOM ---
     const steps = {
         home: document.getElementById('step-home'),
         step1: document.getElementById('step-1-datasheet'),
         step2: document.getElementById('step-2-calibration'),
         step3: document.getElementById('step-3-report'),
-        step4: document.getElementById('step-4-history'),
+        history: document.getElementById('step-4-history'),
     };
     const formSteps = {
         '1a': document.getElementById('form-step-1a'),
         '1b': document.getElementById('form-step-1b'),
         '1c': document.getElementById('form-step-1c')
     };
+    
+    // Selectores de Navegación
+    const goToAppBtn = document.getElementById('goToAppBtn');
+    const goToHistoryBtn = document.getElementById('goToHistoryBtn');
+    const backToAppBtn = document.getElementById('backToAppBtn');
+    const backToStep1Btn = document.getElementById('backToStep1Btn');
+    
     const instrumentForm = document.getElementById('instrumentForm');
     const nextBtn1 = document.getElementById('nextBtn1');
     const nextBtn2 = document.getElementById('nextBtn2');
     const backBtn1 = document.getElementById('backBtn1');
     const backBtn2 = document.getElementById('backBtn2');
-    const backToStep1Btn = document.getElementById('backToStep1Btn');
     const validateBtn = document.getElementById('validateBtn');
     const resetMeasurementBtn = document.getElementById('resetMeasurementBtn');
     const generatePdfBtn = document.getElementById('generatePdfBtn');
@@ -151,27 +140,30 @@ function initializeMainApp() {
     const pvUnitOtherGroup = document.getElementById('pvUnitOtherGroup');
     const customKeyboard = document.getElementById('custom-keyboard');
 
-    // --- NUEVA FUNCIÓN DE SCROLL PARA EL TECLADO ---
-    function scrollToActiveInput(activeElement) {
-        if (!activeElement || !customKeyboard.classList.contains('visible')) return;
+    // --- NUEVA FUNCIÓN DE RESUMEN DINÁMICO ---
+    async function updateDashboardSummary() {
+        const summaryP = document.getElementById('history-summary');
+        if (!summaryP) return;
 
-        const keyboardHeight = customKeyboard.offsetHeight;
-        const elementRect = activeElement.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
+        try {
+            const reports = await window.dbManager.getAllReports();
+            const count = reports.length;
 
-        const elementBottomPosition = elementRect.bottom;
-        const keyboardTopPosition = viewportHeight - keyboardHeight;
-
-        if (elementBottomPosition > keyboardTopPosition) {
-            const scrollAmount = elementBottomPosition - keyboardTopPosition + 20; // 20px de padding
-            window.scrollBy({
-                top: scrollAmount,
-                behavior: 'smooth'
-            });
+            if (count === 0) {
+                summaryP.textContent = "No hay reportes guardados.";
+            } else if (count === 1) {
+                summaryP.textContent = "Hay 1 reporte guardado.";
+            } else {
+                summaryP.textContent = `Hay ${count} reportes guardados.`;
+            }
+        } catch (error) {
+            console.error("Error al actualizar el resumen del panel:", error);
+            summaryP.textContent = "No se pudo acceder al historial.";
         }
     }
-    
+
     // --- FUNCIONES INTERNAS ---
+    function scrollToActiveInput(activeElement) { if (!activeElement || !customKeyboard.classList.contains('visible')) return; const keyboardHeight = customKeyboard.offsetHeight; const elementRect = activeElement.getBoundingClientRect(); const viewportHeight = window.innerHeight; const elementBottomPosition = elementRect.bottom; const keyboardTopPosition = viewportHeight - keyboardHeight; if (elementBottomPosition > keyboardTopPosition) { const scrollAmount = elementBottomPosition - keyboardTopPosition + 20; window.scrollBy({ top: scrollAmount, behavior: 'smooth' }); } }
     function sanitizeHTML(str) { if (!str) return ''; const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; }
     function navigateToAppStep(stepName) { Object.values(steps).forEach(step => step.classList.remove('active')); if(steps[stepName]) { steps[stepName].classList.add('active'); } window.scrollTo(0, 0); }
     function navigateToFormStep(formStepName) { Object.values(formSteps).forEach(step => step.classList.remove('active')); if(formSteps[formStepName]) { formSteps[formStepName].classList.add('active'); } }
@@ -252,14 +244,7 @@ function initializeMainApp() {
         summaryEquationP.classList.remove('hidden');
         updateChart();
     }
-    function getChartConfig() {
-        const { lrv, urv, pvUnit } = calibrationState.instrumentData;
-        const measuredData = calibrationState.calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationState.calibrationData.measured_mA[i] }));
-        return {
-            type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] },
-            options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } }
-        };
-    }
+    function getChartConfig() { const { lrv, urv, pvUnit } = calibrationState.instrumentData; const measuredData = calibrationState.calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationState.calibrationData.measured_mA[i] })); return { type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] }, options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } } }; }
     function updateChart() { if (calibrationState.chart) { calibrationState.chart.destroy(); calibrationState.chart = null; } const ctx = document.getElementById('chart').getContext('2d'); calibrationState.chart = new Chart(ctx, getChartConfig()); }
     async function generatePDF() {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -318,22 +303,29 @@ function initializeMainApp() {
         document.getElementById('error-values-row').classList.add('hidden');
         idealValuesCells.forEach(cell => cell.textContent = '-');
         navigateToFormStep('1a');
-        navigateToAppStep('step1');
+        navigateToAppStep('step1'); // Regresa al paso 1, no al home
     }
     function showError(message) { const errorMessageDiv = document.getElementById('error-message'); if (errorMessageDiv) { errorMessageDiv.textContent = message; errorMessageDiv.classList.remove('hidden'); } }
     function hideError() { const errorMessageDiv = document.getElementById('error-message'); if (errorMessageDiv) { errorMessageDiv.classList.add('hidden'); } }
     function resetCalibrationState() { isValidated = false; calibrationState = { instrumentData: {}, calibrationData: { ideal: [], measured: [], errors: [], ideal_mA: [], measured_mA: [], errors_mA: [] }, span: 0, errorThreshold_mA: 0, chart: null, equation: { m: 0, b: 0, formatted: '' } }; }
     
     // --- ASIGNACIÓN DE EVENT LISTENERS ---
+    if(goToAppBtn) goToAppBtn.addEventListener('click', () => navigateToAppStep('step1'));
+    if(goToHistoryBtn) goToHistoryBtn.addEventListener('click', () => navigateToAppStep('history'));
+    if(backToAppBtn) backToAppBtn.addEventListener('click', () => navigateToAppStep('home'));
+
     if(nextBtn1) nextBtn1.addEventListener('click', () => { if (validateFormStep('1a')) { hideError(); navigateToFormStep('1b'); } });
     if(backBtn1) backBtn1.addEventListener('click', () => navigateToFormStep('1a'));
     if(nextBtn2) nextBtn2.addEventListener('click', () => { if (validateFormStep('1b')) { hideError(); sessionState.executingCompany = sanitizeHTML(document.getElementById('executingCompany').value); navigateToFormStep('1c'); } });
     if(backBtn2) backBtn2.addEventListener('click', () => navigateToFormStep('1b'));
-    if(backToStep1Btn) backToStep1Btn.addEventListener('click', () => navigateToAppStep('step1'));
+    if(backToStep1Btn) backToStep1Btn.addEventListener('click', () => navigateToFormStep('1a')); // Corregido para volver al sub-paso
     if(validateBtn) validateBtn.addEventListener('click', () => { if (!isValidated) { if (validateMeasuredInputs()) { calculateAndDisplayErrors(); isValidated = true; validateBtn.textContent = 'Continuar'; resetMeasurementBtn.disabled = true; backToStep1Btn.disabled = true; } } else { prepareReportStep(); navigateToAppStep('step3'); } });
     if(resetMeasurementBtn) resetMeasurementBtn.addEventListener('click', () => { measuredInputs.forEach(input => input.textContent = ''); errorValuesCells.forEach(cell => { cell.textContent = '-'; cell.classList.remove('error-ok', 'error-fail'); }); document.getElementById('error-values-row').classList.add('hidden'); hideError(); });
     if(generatePdfBtn) generatePdfBtn.addEventListener('click', generatePDF);
-    if(fullResetBtn) fullResetBtn.addEventListener('click', softReset);
+    if(fullResetBtn) fullResetBtn.addEventListener('click', () => {
+        softReset();
+        navigateToAppStep('home'); // El reseteo completo ahora lleva al Panel de Control
+    });
     if(clientTypeSelect) clientTypeSelect.addEventListener('change', () => { clientNameGroup.classList.toggle('hidden', clientTypeSelect.value !== 'Externo'); });
     if(protocolSelect) protocolSelect.addEventListener('change', () => { protocolOtherGroup.classList.toggle('hidden', protocolSelect.value !== 'Otro'); });
     if(pvUnitSelect) pvUnitSelect.addEventListener('change', () => { pvUnitOtherGroup.classList.toggle('hidden', pvUnitSelect.value !== 'custom'); });
@@ -358,7 +350,7 @@ function initializeMainApp() {
             activeNumericInput.classList.add('active-input');
             updateCursor();
             customKeyboard.classList.add('visible');
-            setTimeout(() => { // Llama a la función de scroll después de que la animación del teclado inicie
+            setTimeout(() => {
                 scrollToActiveInput(activeNumericInput);
             }, 300);
         });
@@ -368,13 +360,7 @@ function initializeMainApp() {
         const key = e.target.dataset.key;
         let value = activeNumericInput.textContent.replace(/<span class="cursor"><\/span>/g, '');
         switch (key) {
-            case 'ok':
-                customKeyboard.classList.remove('visible');
-                if (activeNumericInput) activeNumericInput.classList.remove('active-input');
-                if (cursorSpan) cursorSpan.remove();
-                activeNumericInput = null;
-                cursorSpan = null;
-                return;
+            case 'ok': customKeyboard.classList.remove('visible'); if (activeNumericInput) activeNumericInput.classList.remove('active-input'); if (cursorSpan) cursorSpan.remove(); activeNumericInput = null; cursorSpan = null; return;
             case 'backspace': value = value.slice(0, -1); break;
             case '.': if (!value.includes('.')) value += '.'; break;
             case '-': if (value.length === 0) value += '-'; break;
@@ -384,7 +370,9 @@ function initializeMainApp() {
         activeNumericInput.textContent = value;
         updateCursor();
     });
-    resetCalibrationState();
+    
+    // Llamada inicial para actualizar el panel
+    updateDashboardSummary();
 }
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
