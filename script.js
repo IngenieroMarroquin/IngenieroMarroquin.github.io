@@ -670,6 +670,16 @@ function initializeMainApp() {
         prepareCalibrationStep();
         navigateToAppStep('step2');
     });
+    // --- Bloque de código del Teclado Restaurado y Corregido ---
+    document.querySelectorAll('.numeric-input-field').forEach(field => {
+        field.addEventListener('click', (e) => {
+            document.querySelectorAll('.numeric-input-field.active-input').forEach(el => el.classList.remove('active-input'));
+            activeNumericInput = e.currentTarget;
+            activeNumericInput.classList.add('active-input');
+            updateCursor();
+            customKeyboard.classList.add('visible');
+        });
+    });
     if(customKeyboard) customKeyboard.addEventListener('click', (e) => {
         if (!e.target.matches('.keyboard-btn') || !activeNumericInput) return;
         const key = e.target.dataset.key;
@@ -681,7 +691,7 @@ function initializeMainApp() {
                 if(cursorSpan) cursorSpan.remove();
                 activeNumericInput = null;
                 cursorSpan = null;
-                return; // <-- CORRECCIÓN AÑADIDA
+                return; // ESTA ES LA CORRECCIÓN CRÍTICA
             case 'backspace': value = value.slice(0, -1); break;
             case '.': if (!value.includes('.')) value += '.'; break;
             case '-': if (value.length === 0) value += '-'; break;
