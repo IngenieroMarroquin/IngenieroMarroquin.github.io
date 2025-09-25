@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SignalCheck Pro</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=4.1.1">
+  <link rel="stylesheet" href="style.css?v=4.2.0">
   <script src="libs/chart.umd.js"></script>
   <script src="libs/chartjs-plugin-datalabels.min.js"></script>
   <script src="libs/jspdf.umd.min.js"></script>
@@ -18,7 +18,6 @@
       <p class="subtitle">by Ingeniero Marroquin</p>
       <p>Herramienta de Calibración y Certificación de Instrumentos</p>
     </header>
-
     <section id="step-0-activation" class="app-step">
       <h2>Activación de SignalCheck PRO</h2>
       <p>Por favor, introduce tu clave de licencia para activar todas las funcionalidades de la aplicación.</p>
@@ -26,14 +25,14 @@
       <div class="button-group" style="justify-content: center;"><button type="button" id="activateBtn" class="btn-primary">Activar Licencia</button></div>
       <div id="activation-error-message" class="hidden" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--error-bg-color); color: white; text-align: center; border-radius: 4px; font-weight: bold;"></div>
     </section>
-
-    <section id="step-home" class="app-step active">
+    <section id="step-home" class="app-step">
         <h2>Panel de Control</h2>
         <p id="history-summary">Verificando reportes guardados...</p>
         <div class="button-group-vertical">
             <button id="goToAppBtn" class="btn-primary">Iniciar Nueva Calibración</button>
             <button id="goToHistoryBtn" class="btn-secondary">Ver Historial de Reportes</button>
         </div>
+        <p class="app-description">Bienvenido a SignalCheck Pro™, su asistente de campo para la calibración de instrumentos. Inicie una <strong>nueva calibración</strong> para generar un reporte técnico completo en PDF, o acceda al <strong>historial</strong> para consultar y gestionar todos sus reportes guardados directamente en este dispositivo, sin necesidad de conexión a internet.</p>
     </section>
     <section id="step-1-datasheet" class="app-step">
       <form id="instrumentForm">
@@ -54,11 +53,13 @@
             <div class="input-group"><label for="pvUnit">Unidad de PV (Obligatoria)</label><select id="pvUnit" required><option value="" disabled selected>Seleccione una unidad...</option><optgroup label="Presión"><option value="psi">psi</option><option value="bar">bar</option><option value="inH2O">inH2O</option><option value="mmH2O">mmH2O</option><option value="inHg">inHg</option><option value="mmHg">mmHg</option><option value="kPa">kPa</option><option value="kg/cm²">kg/cm²</option></optgroup><optgroup label="Temperatura"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup><optgroup label="Flujo"><option value="GPM">GPM</option><option value="LPM">LPM</option><option value="m³/h">m³/h</option><option value="ft³/h">ft³/h</option></optgroup><optgroup label="Nivel"><option value="%">%</option><option value="m">m</option><option value="cm">cm</option><option value="ft">ft</option><option value="in">in</option></optgroup><optgroup label="Otras"><option value="pH">pH</option><option value="RPM">RPM</option><option value="Hz">Hz</option><option value="mA">mA</option></optgroup><option value="custom">Otra (especificar)...</option></select></div>
             <div class="input-group hidden" id="pvUnitOtherGroup"><label for="pvUnitOther">Especifique Otra Unidad</label><input type="text" id="pvUnitOther"></div>
           </div>
-          <div class="button-group"><button type="button" id="nextBtn1" class="btn-primary">Siguiente</button></div>
+          <div class="button-group"><button type="button" id="homeBtn1" class="btn-secondary">Panel de Control</button><button type="button" id="nextBtn1" class="btn-primary">Siguiente</button></div>
         </div>
         <div id="form-step-1b" class="form-step-container">
           <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
-          <div class="input-grid"><div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div><div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div><div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div><div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div><div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div><div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div><div class="input-group"><label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label><div id="permissibleError" class="numeric-input-field" required>1.0</div></div><div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div><div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div><div class="input-group"><label for="calibratorLastCal">Última Calibración del Patrón</label><input type="date" id="calibratorLastCal"></div><div class="input-group"><label for="calibratorCalDue">Vencimiento Calibración del Patrón</label><input type="date" id="calibratorCalDue"></div><div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div><div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div><div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div></div>
+          <div class="input-grid">
+            <div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div><div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div><div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div><div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div><div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div><div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div><div class="input-group"><label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label><div id="permissibleError" class="numeric-input-field" required>1.0</div></div><div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div><div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div><div class="input-group"><label for="calibratorLastCal">Última Calibración del Patrón</label><input type="date" id="calibratorLastCal"></div><div class="input-group"><label for="calibratorCalDue">Vencimiento Calibración del Patrón</label><input type="date" id="calibratorCalDue"></div><div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div><div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div><div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
+          </div>
           <div class="button-group"><button type="button" id="backBtn1" class="btn-secondary">Atrás</button><button type="button" id="nextBtn2" class="btn-primary">Siguiente</button></div>
         </div>
         <div id="form-step-1c" class="form-step-container">
@@ -91,14 +92,19 @@
         <div class="chart-container"><canvas id="chart"></canvas></div>
         <p id="summary-equation" class="hidden"></p>
       </div>
-      <button id="generatePdfBtn" class="btn-export">Generar Reporte PDF</button>
-      <button id="fullResetBtn" class="btn-secondary" style="width: 100%; margin-top: 1rem;">Iniciar Nueva Calibración</button>
+      <div class="button-group-vertical">
+        <button id="generatePdfBtn" class="btn-export">Generar Reporte PDF</button>
+        <button id="fullResetBtn" class="btn-primary" style="margin-top: 1rem;">Volver al Panel de Control</button>
+      </div>
     </section>
     <section id="step-4-history" class="app-step">
       <h2>Historial de Reportes Offline</h2>
       <div class="history-controls"><input type="search" id="searchTag" placeholder="Buscar por TAG..."><input type="date" id="searchDate"><button id="clearSearchBtn" class="btn-secondary">Limpiar</button></div>
-      <div id="history-list-container"></div>
-      <div class="button-group" style="flex-direction: column; align-items: stretch;"><button id="deleteAllHistoryBtn" class="btn-secondary" style="background-color: var(--fail-color); width: 100%;">Borrar Todo el Historial</button><button id="backToAppBtn" class="btn-primary" style="width: 100%;">Volver a la App</button></div>
+      <div id="history-list-container"><p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p></div>
+      <div class="button-group-vertical">
+        <button id="deleteAllHistoryBtn" class="btn-secondary" style="background-color: var(--fail-color);">Borrar Todo el Historial</button>
+        <button id="backToHomeBtn" class="btn-primary">Volver al Panel de Control</button>
+      </div>
     </section>
     <div id="error-message" class="hidden"></div>
     <div id="update-notification" class="hidden"><p>Nueva versión disponible.</p><button id="update-btn" class="btn-primary">Actualizar</button></div>
@@ -112,6 +118,6 @@
     </div>
   </div>
   <script src="dbManager.js"></script>
-  <script src="script.js?v=4.1.1"></script>
+  <script src="script.js?v=4.2.0"></script>
 </body>
 </html>
