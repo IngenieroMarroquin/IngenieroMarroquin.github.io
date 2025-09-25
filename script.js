@@ -14,22 +14,7 @@ async function generateFingerprint() { const canvas = document.createElement('ca
 async function handleActivation() { const activateBtn = document.getElementById('activateBtn'); const licenseKeyInput = document.getElementById('licenseKey'); const licenseKey = licenseKeyInput.value.trim().toUpperCase(); if (!licenseKey) { showActivationError('Por favor, introduce una clave de licencia.'); return; } activateBtn.classList.add('loading'); activateBtn.disabled = true; hideActivationError(); try { const fingerprint = await generateFingerprint(); const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licenseKey, fingerprint }) }); const data = await response.json(); if (response.ok && data.success) { localStorage.setItem(LICENSE_STORAGE_KEY, 'VALID'); window.location.reload(); } else { showActivationError(data.message || 'Error desconocido.'); activateBtn.classList.remove('loading'); activateBtn.disabled = false; } } catch (error) { console.error('Error de red al activar:', error); showActivationError('Error de conexión. Verifica tu acceso a internet.'); activateBtn.classList.remove('loading'); activateBtn.disabled = false; } }
 function showActivationError(message) { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.textContent = message; activationErrorDiv.classList.remove('hidden'); } }
 function hideActivationError() { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.classList.add('hidden'); } }
-function checkLicenseAndInitialize() {
-    const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY);
-    const activationStep = document.getElementById('step-0-activation');
-    const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)');
-    if (licenseStatus === 'VALID') {
-        activationStep.style.display = 'none';
-        document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active'));
-        document.getElementById('step-home').classList.add('active');
-        initializeMainApp();
-    } else {
-        activationStep.style.display = 'block';
-        activationStep.classList.add('active');
-        appSections.forEach(step => step.style.display = 'none');
-    }
-}
-// --- CONTENEDOR PRINCIPAL DE LA APLICACIÓN ---
+function checkLicenseAndInitialize() { const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY); const activationStep = document.getElementById('step-0-activation'); const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)'); if (licenseStatus === 'VALID') { activationStep.style.display = 'none'; document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active')); document.getElementById('step-home').classList.add('active'); initializeMainApp(); } else { activationStep.style.display = 'block'; activationStep.classList.add('active'); appSections.forEach(step => step.style.display = 'none'); } }
 async function initializeMainApp() {
     const steps = { home: document.getElementById('step-home'), step1: document.getElementById('step-1-datasheet'), step2: document.getElementById('step-2-calibration'), step3: document.getElementById('step-3-report'), history: document.getElementById('step-4-history'), };
     const formSteps = { '1a': document.getElementById('form-step-1a'), '1b': document.getElementById('form-step-1b'), '1c': document.getElementById('form-step-1c') };
@@ -60,7 +45,7 @@ async function initializeMainApp() {
     const logoInput = document.getElementById('logoInput');
     const logoPreviewContainer = document.getElementById('logo-preview-container');
     const logoPreview = document.getElementById('logo-preview');
-    const removeLogoBtn = document.getElementById('removeLogoBtn');
+    const removeLogoBtn = document.getElementById('removeLogoBtn'); // LÍNEA RESTAURADA
     async function updateDashboardSummary() { const summaryP = document.getElementById('history-summary'); const historyBtn = document.getElementById('goToHistoryBtn'); if (!summaryP || !historyBtn) return; try { const reports = await window.dbManager.getAllReports(); const count = reports.length; if (count === 0) { summaryP.textContent = "No hay reportes guardados."; historyBtn.disabled = true; } else if (count === 1) { summaryP.textContent = "Hay 1 reporte guardado."; historyBtn.disabled = false; } else { summaryP.textContent = `Hay ${count} reportes guardados.`; historyBtn.disabled = false; } } catch (error) { console.error("Error al actualizar el resumen del panel:", error); summaryP.textContent = "No se pudo acceder al historial."; historyBtn.disabled = true; } }
     function scrollToActiveInput(activeElement) { if (!activeElement || !customKeyboard.classList.contains('visible')) return; const keyboardHeight = customKeyboard.offsetHeight; const elementRect = activeElement.getBoundingClientRect(); const viewportHeight = window.innerHeight; const elementBottomPosition = elementRect.bottom; const keyboardTopPosition = viewportHeight - keyboardHeight; if (elementBottomPosition > keyboardTopPosition) { const scrollAmount = elementBottomPosition - keyboardTopPosition + 20; window.scrollBy({ top: scrollAmount, behavior: 'smooth' }); } }
     function sanitizeHTML(str) { if (!str) return ''; const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; }
@@ -110,9 +95,10 @@ async function initializeMainApp() {
     if (pvUnitSelect) pvUnitSelect.addEventListener('change', () => { document.getElementById('pvUnitOtherGroup').classList.toggle('hidden', pvUnitSelect.value !== 'custom'); });
     if (logoUploadContainer) logoUploadContainer.addEventListener('click', () => logoInput.click());
     if (logoInput) logoInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) { const reader = new FileReader(); reader.onload = (e) => { sessionState.companyLogo = e.target.result; logoPreview.src = e.target.result; logoPreviewContainer.classList.remove('hidden'); logoUploadContainer.classList.add('hidden'); }; reader.readAsDataURL(file); } else { showError('Por favor, seleccione un archivo de imagen válido (.jpg o .png).'); } });
-    if (removeBtn) removeBtn.addEventListener('click', () => { sessionState.companyLogo = null; logoInput.value = ''; logoPreviewContainer.classList.add('hidden'); logoUploadContainer.classList.remove('hidden'); });
+    if (removeLogoBtn) removeLogoBtn.addEventListener('click', () => { sessionState.companyLogo = null; logoInput.value = ''; logoPreviewContainer.classList.add('hidden'); logoUploadContainer.classList.remove('hidden'); });
     if (instrumentForm) instrumentForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        if(!validateFormStep('1a') || !validateFormStep('1b') || !validateFormStep('1c')) return;
         let protocolValue = sanitizeHTML(document.getElementById('protocol').value);
         if (protocolValue === 'Otro') protocolValue = sanitizeHTML(document.getElementById('protocolOther').value);
         let pvUnitValue = sanitizeHTML(document.getElementById('pvUnit').value);
