@@ -1,73 +1,80 @@
-// service-worker.js
-const CACHE_NAME = 'signalcheck-pro-shell-v1';
-const SW_VERSION = '1.1'; // Versión actualizada para la lógica de caché
-
-// Lista de archivos que componen el "App Shell"
-const URLS_TO_CACHE = [
+const CACHE_NAME = 'signalcheck-pro-v4'; // Aumentamos la versión para forzar la actualización
+const urlsToCache = [
   '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json',
-  '/images/icons/icon-192x192.png',
-  '/images/icons/icon-512x512.png',
-  '/libs/chart.umd.js',
-  '/libs/chartjs-plugin-datalabels.min.js',
-  '/libs/jspdf.umd.min.js',
-  '/libs/jspdf.plugin.autotable.min.js'
+  'index.html',
+  'style.css',
+  'script.js',
+  'dbManager.js',
+  'manifest.json',
+  'libs/chart.umd.js',
+  'libs/chartjs-plugin-datalabels.min.js',
+  'libs/jspdf.umd.min.js',
+  'libs/jspdf.plugin.autotable.min.js',
+  'icons/icon-72x72.png',
+  'icons/icon-96x96.png',
+  'icons/icon-128x128.png',
+  'icons/icon-144x144.png',
+  'icons/icon-152x152.png',
+  'icons/icon-192x192.png',
+  'icons/icon-384x384.png',
+  'icons/icon-512x512.png'
 ];
 
-console.log(`Service Worker v${SW_VERSION} iniciando...`);
-
-// Evento 'install': Se dispara cuando el SW se instala por primera vez.
-self.addEventListener('install', (event) => {
-  console.log(`[SW v${SW_VERSION}] Evento: install`);
-  // Esperamos a que la promesa de cacheo se complete
+// Durante la instalación, se cachean los archivos fundamentales de la app
+self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Cache abierto. Cacheando el App Shell...');
-        return cache.addAll(URLS_TO_CACHE);
+      .then(cache => {
+        console.log('Service Worker: Precargando archivos en caché...');
+        return cache.addAll(urlsToCache);
       })
       .then(() => {
-        console.log('Todos los recursos del App Shell han sido cacheados exitosamente.');
+        // Forza al nuevo Service Worker a activarse inmediatamente
         return self.skipWaiting();
       })
   );
 });
 
-// Evento 'activate': Se dispara después de la instalación. Es donde se limpian cachés antiguos.
-self.addEventListener('activate', (event) => {
-  console.log(`[SW v${SW_VERSION}] Evento: activate`);
+// Durante la activación, se limpian los cachés antiguos
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          // Si el nombre del caché no es el actual, lo borramos
+        cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Borrando caché antiguo:', cacheName);
+            console.log('Service Worker: Eliminando caché antiguo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+        // Toma el control de todos los clientes abiertos inmediatamente
+        return self.clients.claim();
+    })
   );
 });
 
-// Evento 'fetch': Se dispara cada vez que la aplicación solicita un recurso (imagen, script, etc.)
-self.addEventListener('fetch', (event) => {
-  // Estrategia: Cache First, falling back to Network
+// Estrategia "Stale-While-Revalidate"
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Si encontramos una respuesta en el caché, la retornamos
-        if (response) {
-          // console.log('Sirviendo desde caché:', event.request.url);
-          return response;
-        }
-        // Si no, vamos a la red a buscarlo
-        // console.log('Buscando en la red:', event.request.url);
-        return fetch(event.request);
-      })
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(response => {
+        // Sirve desde caché primero (stale)
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          // Mientras tanto, actualiza la caché con la nueva versión (revalidate)
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+        // Retorna la respuesta de la caché si existe, o espera a la red si no.
+        return response || fetchPromise;
+      });
+    })
   );
+});
+
+// Escucha mensajes de la aplicación, como el de "skipWaiting"
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
