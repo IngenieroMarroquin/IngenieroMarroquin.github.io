@@ -514,7 +514,7 @@ function initializeMainApp() {
         doc.setFontSize(8); doc.setTextColor(100);
         doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
         doc.save(`Reporte_Calibracion_${instrumentData.tag}.pdf`);
-
+        
         // --- INICIO: Bloque de código para Historial Offline ---
         try {
             const reportMetadata = {
