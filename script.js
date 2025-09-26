@@ -9,6 +9,7 @@ let calibrationState = {};
 let isValidated = false;
 let activeNumericInput = null;
 let cursorSpan = null;
+
 // --- LÓGICA DE LICENCIAMIENTO ---
 async function generateFingerprint() { const canvas = document.createElement('canvas'); const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl'); const renderer = gl ? gl.getParameter(gl.RENDERER) : 'no-webgl'; const data = [navigator.userAgent, screen.width + 'x' + screen.height, navigator.language, new Date().getTimezoneOffset(), renderer].join('||'); const encoder = new TextEncoder(); const dataBuffer = encoder.encode(data); const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); }
 async function handleActivation() { const activateBtn = document.getElementById('activateBtn'); const licenseKeyInput = document.getElementById('licenseKey'); const licenseKey = licenseKeyInput.value.trim().toUpperCase(); if (!licenseKey) { showActivationError('Por favor, introduce una clave de licencia.'); return; } activateBtn.classList.add('loading'); activateBtn.disabled = true; hideActivationError(); try { const fingerprint = await generateFingerprint(); const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licenseKey, fingerprint }) }); const data = await response.json(); if (response.ok && data.success) { localStorage.setItem(LICENSE_STORAGE_KEY, 'VALID'); window.location.reload(); } else { showActivationError(data.message || 'Error desconocido.'); activateBtn.classList.remove('loading'); activateBtn.disabled = false; } } catch (error) { console.error('Error de red al activar:', error); showActivationError('Error de conexión. Verifica tu acceso a internet.'); activateBtn.classList.remove('loading'); activateBtn.disabled = false; } }
@@ -16,16 +17,23 @@ function showActivationError(message) { const activationErrorDiv = document.getE
 function hideActivationError() { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.classList.add('hidden'); } }
 function checkLicenseAndInitialize() { const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY); const activationStep = document.getElementById('step-0-activation'); const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)'); if (licenseStatus === 'VALID') { activationStep.style.display = 'none'; document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active')); document.getElementById('step-home').classList.add('active'); initializeMainApp(); } else { activationStep.style.display = 'block'; activationStep.classList.add('active'); appSections.forEach(step => step.style.display = 'none'); } }
 
-// --- NUEVA FUNCIÓN DE UTILIDAD PARA CREAR UN ESTADO SERIALIZABLE ---
+// --- FUNCIÓN DE UTILIDAD CLAVE PARA CREAR UN ESTADO SERIALIZABLE (DTO) ---
 function getSerializableState(state) {
-    // Se usa JSON.parse(JSON.stringify(...)) como una forma rápida de hacer una copia profunda
-    // de los datos que SÍ son serializables, descartando cualquier instancia de clase o referencia circular.
+    // Clona solo las propiedades serializables y primitivas del estado,
+    // ignorando cualquier objeto complejo como la instancia del gráfico.
     const cleanState = {
-        instrumentData: JSON.parse(JSON.stringify(state.instrumentData || {})),
-        calibrationData: JSON.parse(JSON.stringify(state.calibrationData || {})),
+        instrumentData: { ...state.instrumentData },
+        calibrationData: {
+            ideal: [...state.calibrationData.ideal],
+            measured: [...state.calibrationData.measured],
+            errors: [...state.calibrationData.errors],
+            ideal_mA: [...state.calibrationData.ideal_mA],
+            measured_mA: [...state.calibrationData.measured_mA],
+            errors_mA: [...state.calibrationData.errors_mA],
+        },
         span: state.span,
         errorThreshold_mA: state.errorThreshold_mA,
-        equation: state.equation
+        equation: { ...state.equation }
     };
     return cleanState;
 }
@@ -103,9 +111,10 @@ async function initializeMainApp() {
     function prepareReportStep() { const { tag } = calibrationState.instrumentData; const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA)); document.getElementById('summary-tag').textContent = tag; document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES'); const resultSpan = document.getElementById('summary-result'); resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)'; resultSpan.className = isOk ? 'error-ok' : 'error-fail'; document.getElementById('summary-equation').textContent = calibrationState.equation.formatted; document.getElementById('summary-equation').classList.remove('hidden'); updateChart(); }
     function getChartConfig(stateToUse) { const { instrumentData, calibrationData } = stateToUse; const { lrv, urv, pvUnit } = instrumentData; const measuredData = calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationData.measured_mA[i] })); return { type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] }, options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } } }; }
     function updateChart() { if (calibrationState.chart) { calibrationState.chart.destroy(); calibrationState.chart = null; } const ctx = document.getElementById('chart').getContext('2d'); calibrationState.chart = new Chart(ctx, getChartConfig(calibrationState)); }
-    async function generatePDF(stateToUse) {
+    
+    async function generatePDF(stateForPdf) {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateToUse;
+        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateForPdf;
         const isOk = calibrationData.errors_mA.every(e => isWithinTolerance(e, errorThreshold_mA));
         let finalY = 10;
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -137,7 +146,7 @@ async function initializeMainApp() {
         doc.text(`Resultado General: ${isOk ? 'APROBADO' : 'RECHAZADO'}`, 14, finalY);
         doc.setTextColor(0, 0, 0); finalY += 8;
         const offscreenContainer = document.createElement('div'); offscreenContainer.style.position = 'absolute'; offscreenContainer.style.left = '-9999px'; offscreenContainer.style.width = '800px'; offscreenContainer.style.height = '450px'; const offscreenCanvas = document.createElement('canvas'); offscreenContainer.appendChild(offscreenCanvas); document.body.appendChild(offscreenContainer);
-        const chartConfig = getChartConfig(stateToUse);
+        const chartConfig = getChartConfig(stateForPdf);
         chartConfig.options.animation = false; const tempChart = new Chart(offscreenCanvas.getContext('2d'), chartConfig); await new Promise(resolve => setTimeout(resolve, 200)); const chartImage = tempChart.toBase64Image(); tempChart.destroy(); document.body.removeChild(offscreenContainer);
         const pageWidth = doc.internal.pageSize.getWidth(); const chartWidth = pageWidth - 28; const chartHeight = (chartWidth * 450) / 800; doc.addImage(chartImage, 'PNG', 14, finalY, chartWidth, chartHeight); finalY += chartHeight + 8;
         doc.setFont('courier', 'bold'); doc.setFontSize(9); doc.text(equation.formatted, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); doc.setFont('helvetica', 'normal'); finalY += 8;
@@ -193,16 +202,16 @@ async function initializeMainApp() {
     if (validateBtn) validateBtn.addEventListener('click', () => { if (!isValidated) { if (validateMeasuredInputs()) { calculateAndDisplayErrors(); isValidated = true; validateBtn.textContent = 'Continuar'; resetMeasurementBtn.disabled = true; backToStep1Btn.disabled = true; } } else { prepareReportStep(); navigateToAppStep('step3'); } });
     if (resetMeasurementBtn) resetMeasurementBtn.addEventListener('click', () => { document.querySelectorAll('.measured-input').forEach(input => input.textContent = ''); document.querySelectorAll('#error-values-row td:not(:first-child)').forEach(cell => { cell.textContent = '-'; cell.classList.remove('error-ok', 'error-fail'); }); document.getElementById('error-values-row').classList.add('hidden'); hideError(); });
     
-    // --- LÓGICA DE GENERACIÓN Y GUARDADO DE PDF (REESTRUCTURADA) ---
+    // --- LÓGICA DE GENERACIÓN Y GUARDADO DE PDF (REESTRUCTURADA DEFINITIVAMENTE) ---
     if (generatePdfBtn) generatePdfBtn.addEventListener('click', async () => {
-        // 1. Crear un estado limpio y serializable ANTES de cualquier otra cosa.
+        // 1. Crear el DTO limpio ANTES de cualquier otra cosa.
         const stateToSave = getSerializableState(calibrationState);
         const isOk = stateToSave.calibrationData.errors_mA.every(e => isWithinTolerance(e, stateToSave.errorThreshold_mA));
 
-        // 2. Generar el PDF usando el estado "vivo" (calibrationState) que contiene el gráfico.
+        // 2. Generar el PDF.
         await generatePDF(calibrationState);
 
-        // 3. Guardar el estado limpio y seguro en la base de datos.
+        // 3. Guardar el DTO limpio en la base de datos.
         try {
             const reportMetadata = {
                 tag: stateToSave.instrumentData.tag,
