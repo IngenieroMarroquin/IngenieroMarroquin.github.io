@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignalCheck Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=5.0.0">
+  <script src="libs/chart.umd.js"></script>
+  <script src="libs/chartjs-plugin-datalabels.min.js"></script>
+  <script src="libs/jspdf.umd.min.js"></script>
+  <script src="libs/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <main id="app-container">
+    <header>
+      <h1>SignalCheck Pro</h1>
+      <p class="subtitle">by Ingeniero Marroquin</p>
+      <p>Herramienta de Calibración y Certificación de Instrumentos</p>
+    </header>
+    <section id="step-0-activation" class="app-step">
+      <h2>Activación de SignalCheck PRO</h2>
+      <p>Por favor, introduce tu clave de licencia para activar todas las funcionalidades de la aplicación.</p>
+      <div class="input-grid" style="grid-template-columns: 1fr;"><div class="input-group"><label for="licenseKey">Clave de Licencia</label><input type="text" id="licenseKey" placeholder="SCP-XXXX-XXXX-XXXX" style="text-transform: uppercase;"></div></div>
+      <div class="button-group" style="justify-content: center;"><button type="button" id="activateBtn" class="btn-primary">Activar Licencia</button></div>
+      <div id="activation-error-message" class="hidden" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--error-bg-color); color: white; text-align: center; border-radius: 4px; font-weight: bold;"></div>
+    </section>
+    <section id="step-home" class="app-step">
+        <h2>Panel de Control</h2>
+        <p id="history-summary">Verificando reportes guardados...</p>
+        <div class="button-group-vertical">
+            <button id="goToAppBtn" class="btn-primary">Iniciar Nueva Calibración</button>
+            <button id="goToHistoryBtn" class="btn-secondary">Ver Historial de Reportes</button>
+        </div>
+        <p class="app-description">Bienvenido a SignalCheck Pro™, su asistente de campo para la calibración de instrumentos. Inicie una <strong>nueva calibración</strong> para generar un reporte técnico completo en PDF, o acceda al <strong>historial</strong> para consultar y gestionar todos sus reportes guardados directamente en este dispositivo, sin necesidad de conexión a internet.</p>
+    </section>
+    <section id="step-1-datasheet" class="app-step">
+      <form id="instrumentForm">
+        <div id="form-step-1a" class="form-step-container active">
+          <h2>Paso 1.1: Datos del Instrumento y Ubicación</h2>
+          <div class="input-grid">
+            <div class="input-group"><label for="tag">TAG del Instrumento (Obligatorio)</label><input type="text" id="tag" required placeholder="Ej: PT-101A"></div>
+            <div class="input-group"><label for="instrumentType">Tipo de Instrumento</label><input type="text" id="instrumentType" placeholder="Ej: Transmisor de Presión"></div>
+            <div class="input-group"><label for="brand">Marca</label><input type="text" id="brand" placeholder="Ej: Rosemount"></div>
+            <div class="input-group"><label for="model">Modelo</label><input type="text" id="model" placeholder="Ej: 3051S"></div>
+            <div class="input-group"><label for="serialNumber">Nº de Serie</label><input type="text" id="serialNumber" placeholder="Ej: 123456789"></div>
+            <div class="input-group"><label for="power">Alimentación</label><input type="text" id="power" placeholder="Ej: 24 VDC"></div>
+            <div class="input-group"><label for="protocol">Protocolo</label><select id="protocol"><option value="N/A">N/A</option><option value="4 a 20 mA">4 a 20 mA</option><option value="Hart">Hart</option><option value="Foundation Fieldbus">Foundation Fieldbus</option><option value="Profibus">Profibus</option><option value="3 a 15 psi">3 a 15 psi</option><option value="Otro">Otro</option></select></div>
+            <div class="input-group hidden" id="protocolOtherGroup"><label for="protocolOther">Especifique Otro Protocolo</label><input type="text" id="protocolOther"></div>
+            <div class="input-group"><label for="workArea">Área de Trabajo</label><input type="text" id="workArea" placeholder="Ej: Área de Compresores"></div>
+            <div class="input-group"><label for="lrv-wrapper">Valor Mínimo (LRV) (Obligatorio)</label><div id="lrv" class="numeric-input-field" data-placeholder="Ej: -100 o 0" required></div></div>
+            <div class="input-group"><label for="urv-wrapper">Valor Máximo (URV) (Obligatorio)</label><div id="urv" class="numeric-input-field" data-placeholder="Ej: 100" required></div></div>
+            <div class="input-group"><label for="pvUnit">Unidad de PV (Obligatoria)</label><select id="pvUnit" required><option value="" disabled selected>Seleccione una unidad...</option><optgroup label="Presión"><option value="psi">psi</option><option value="bar">bar</option><option value="inH2O">inH2O</option><option value="mmH2O">mmH2O</option><option value="inHg">inHg</option><option value="mmHg">mmHg</option><option value="kPa">kPa</option><option value="kg/cm²">kg/cm²</option></optgroup><optgroup label="Temperatura"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup><optgroup label="Flujo"><option value="GPM">GPM</option><option value="LPM">LPM</option><option value="m³/h">m³/h</option><option value="ft³/h">ft³/h</option></optgroup><optgroup label="Nivel"><option value="%">%</option><option value="m">m</option><option value="cm">cm</option><option value="ft">ft</option><option value="in">in</option></optgroup><optgroup label="Otras"><option value="pH">pH</option><option value="RPM">RPM</option><option value="Hz">Hz</option><option value="mA">mA</option></optgroup><option value="custom">Otra (especificar)...</option></select></div>
+            <div class="input-group hidden" id="pvUnitOtherGroup"><label for="pvUnitOther">Especifique Otra Unidad</label><input type="text" id="pvUnitOther"></div>
+          </div>
+          <div class="button-group"><button type="button" id="homeBtn1" class="btn-secondary">Panel de Control</button><button type="button" id="nextBtn1" class="btn-primary">Siguiente</button></div>
+        </div>
+        <div id="form-step-1b" class="form-step-container">
+          <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
+          <div class="input-grid">
+            <div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div><div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div><div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div><div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div><div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div><div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div><div class="input-group"><label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label><div id="permissibleError" class="numeric-input-field" required>1.0</div></div><div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div><div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div>
+            <div class="input-group"><label for="calibratorLastCal">Última Calibración del Patrón</label><input type="date" id="calibratorLastCal"></div>
+            <div class="input-group"><label for="calibratorCalDue">Vencimiento Calibración del Patrón</label><input type="date" id="calibratorCalDue"></div>
+            <div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div><div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div><div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
+          </div>
+          <div class="button-group"><button type="button" id="backBtn1" class="btn-secondary">Atrás</button><button type="button" id="nextBtn2" class="btn-primary">Siguiente</button></div>
+        </div>
+        <div id="form-step-1c" class="form-step-container">
+          <h2>Paso 1.3: Personalización del Reporte (Opcional)</h2>
+          <div class="input-group"><label for="logoInput">Cargar Logo de la Empresa</label><div id="logo-upload-container"><p>Haga clic aquí para seleccionar un archivo (.jpg, .png)</p></div><input type="file" id="logoInput" class="hidden" accept="image/png, image/jpeg"><div id="logo-preview-container" class="hidden"><img id="logo-preview" src="#" alt="Vista previa del logo"><button type="button" id="removeLogoBtn" class="btn-secondary" style="margin-top: 1rem;">Quitar Logo</button></div></div>
+          <div class="button-group"><button type="button" id="backBtn2" class="btn-secondary">Atrás</button><button type="submit" class="btn-primary">Iniciar Calibración</button></div>
+        </div>
+      </form>
+    </section>
+    <section id="step-2-calibration" class="app-step">
+      <h2>Paso 2: Prueba de Calibración en 5 Puntos</h2>
+      <p>Ingrese los valores medidos para cada punto de referencia.</p>
+      <div id="calibration-table-container">
+        <table id="calibration-table">
+          <thead><tr><th>Punto</th><th>0%</th><th>25%</th><th>50%</th><th>75%</th><th>100%</th></tr></thead>
+          <tbody>
+            <tr id="ideal-values-row"><td><strong>Ideal (Ref.) (<span id="ideal-unit"></span>)</strong></td><td data-label="0%">-</td><td data-label="25%">-</td><td data-label="50%">-</td><td data-label="75%">-</td><td data-label="100%">-</td></tr>
+            <tr id="measured-values-row"><td><strong>Medido (<span id="measured-unit"></span>)</strong></td><td data-label="0%"><div class="numeric-input-field measured-input" required></div></td><td data-label="25%"><div class="numeric-input-field measured-input" required></div></td><td data-label="50%"><div class="numeric-input-field measured-input" required></div></td><td data-label="75%"><div class="numeric-input-field measured-input" required></div></td><td data-label="100%"><div class="numeric-input-field measured-input" required></div></td></tr>
+            <tr id="error-values-row" class="hidden"><td><strong>Error (PV)</strong></td><td data-label="0%">-</td><td data-label="25%">-</td><td data-label="50%">-</td><td data-label="75%">-</td><td data-label="100%">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="button-group"><button type="button" id="backToStep1Btn" class="btn-secondary">Atrás</button><button type="button" id="resetMeasurementBtn" class="btn-secondary">Reiniciar Medición</button><button type="button" id="validateBtn" class="btn-primary">Validar</button></div>
+    </section>
+    <section id="step-3-report" class="app-step">
+      <h2>Paso 3: Resultados y Reporte</h2>
+      <div id="summary-card">
+        <h3>Resumen de la Calibración</h3>
+        <p><strong>TAG:</strong> <span id="summary-tag"></span></p><p><strong>Resultado:</strong> <span id="summary-result"></span></p><p><strong>Fecha:</strong> <span id="summary-date"></span></p>
+        <div class="chart-container"><canvas id="chart"></canvas></div>
+        <p id="summary-equation" class="hidden"></p>
+      </div>
+      <div class="button-group-vertical">
+        <button id="generatePdfBtn" class="btn-export">Generar Reporte PDF</button>
+        <button id="fullResetBtn" class="btn-primary" style="margin-top: 1rem;">Volver al Panel de Control</button>
+      </div>
+    </section>
+    <section id="step-4-history" class="app-step">
+      <h2>Historial de Reportes Offline</h2>
+      <div class="history-controls"><input type="search" id="searchTag" placeholder="Buscar por TAG..."><input type="date" id="searchDate"><button id="clearSearchBtn" class="btn-secondary">Limpiar</button></div>
+      <div id="history-list-container"><p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p></div>
+      <div class="button-group-vertical">
+        <button id="deleteAllHistoryBtn" class="btn-secondary" style="background-color: var(--fail-color);">Borrar Todo el Historial</button>
+        <button id="backToHomeBtn" class="btn-primary">Volver al Panel de Control</button>
+      </div>
+    </section>
+    <div id="error-message" class="hidden"></div>
+    <div id="update-notification" class="hidden"><p>Nueva versión disponible.</p><button id="update-btn" class="btn-primary">Actualizar</button></div>
+  </main>
+  <div id="custom-keyboard">
+    <div class="keyboard-grid">
+      <button class="keyboard-btn" data-key="7">7</button><button class="keyboard-btn" data-key="8">8</button><button class="keyboard-btn" data-key="9">9</button><button class="keyboard-btn backspace-btn" data-key="backspace">⌫</button>
+      <button class="keyboard-btn" data-key="4">4</button><button class="keyboard-btn" data-key="5">5</button><button class="keyboard-btn" data-key="6">6</button><button class="keyboard-btn" data-key="-">-</button>
+      <button class="keyboard-btn" data-key="1">1</button><button class="keyboard-btn" data-key="2">2</button><button class="keyboard-btn" data-key="3">3</button><button class="keyboard-btn" data-key=".">.</button>
+      <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">OK</button>
+    </div>
+  </div>
+  <script src="script.js?v=5.0.0"></script>
+</body>
+</html>
