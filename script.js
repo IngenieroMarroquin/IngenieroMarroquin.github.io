@@ -93,7 +93,26 @@ async function initializeMainApp() {
     function sanitizeHTML(str) { if (!str) return ''; const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; }
     function navigateToAppStep(stepName) { Object.values(steps).forEach(step => step.classList.remove('active')); if(steps[stepName]) { steps[stepName].classList.add('active'); } window.scrollTo(0, 0); }
     function navigateToFormStep(formStepName) { Object.values(formSteps).forEach(step => step.classList.remove('active')); if(formSteps[formStepName]) { formSteps[formStepName].classList.add('active'); } }
-    async function renderHistory(filter = {}) { const allReports = await window.dbManager.getAllReports(); historyListContainer.innerHTML = ''; const filteredReports = allReports.filter(report => { const tagMatch = !filter.tag || report.tag.toLowerCase().includes(filter.tag.toLowerCase()); const dateMatch = !filter.date || report.date.startsWith(filter.date); return tagMatch && dateMatch; }); if (filteredReports.length === 0) { historyListContainer.innerHTML = `<p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p>`; return; } filteredReports.forEach(report => { const item = document.createElement('div'); item.className = 'history-item'; item.dataset.id = report.id; item.innerHTML = `<div class="history-item-info"><span class="history-item-tag">${sanitizeHTML(report.tag)}</span><span class="history-item-date">${new Date(report.date).toLocaleString()}</span></div><div class="history-item-actions"><button data-id="${report.id}" class="btn-delete-report" title="Borrar este reporte">🗑️</button></div>`; historyListContainer.appendChild(item); }); }
+    async function renderHistory(filter = {}) {
+        const allReports = await window.dbManager.getAllReports();
+        historyListContainer.innerHTML = '';
+        const filteredReports = allReports.filter(report => {
+            const tagMatch = !filter.tag || report.tag.toLowerCase().includes(filter.tag.toLowerCase());
+            const dateMatch = !filter.date || report.date.startsWith(filter.date);
+            return tagMatch && dateMatch;
+        });
+        if (filteredReports.length === 0) {
+            historyListContainer.innerHTML = `<p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p>`;
+            return;
+        }
+        filteredReports.forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.dataset.id = report.id;
+            item.innerHTML = `<div class="history-item-info"><span class="history-item-tag">${sanitizeHTML(report.tag)}</span><span class="history-item-date">${new Date(report.date).toLocaleString('es-ES', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div class="history-item-actions"><button data-id="${report.id}" class="btn-delete-report" title="Borrar este reporte">🗑️</button></div>`;
+            historyListContainer.appendChild(item);
+        });
+    }
     async function loadAndRenderHistory() { searchTagInput.value = ''; searchDateInput.value = ''; await renderHistory(); }
     function softReset() { if (calibrationState.chart) { calibrationState.chart.destroy(); } resetCalibrationState(); const fieldsToReset = ['tag', 'instrumentType', 'brand', 'model', 'serialNumber', 'power', 'protocol', 'protocolOther', 'workArea', 'lrv', 'urv', 'pvUnit', 'pvUnitOther', 'workOrder', 'testType', 'testCondition', 'clientType', 'clientName', 'permissibleError', 'calibrator', 'calibratorSerialNumber', 'calibratorLastCal', 'calibratorCalDue', 'technician', 'workLead', 'supervisor']; fieldsToReset.forEach(id => { const el = document.getElementById(id); if (el) { if (el.tagName === 'SELECT') { el.selectedIndex = 0; } else if (el.tagName === 'INPUT') { el.value = ''; } else if (el.tagName === 'DIV') { el.textContent = ''; } } }); document.getElementById('permissibleError').textContent = '1.0'; document.querySelectorAll('.measured-input').forEach(input => input.textContent = ''); document.querySelectorAll('#error-values-row td:not(:first-child)').forEach(cell => { cell.textContent = '-'; cell.className = ''; }); document.getElementById('error-values-row').classList.add('hidden'); document.querySelectorAll('#ideal-values-row td:not(:first-child)').forEach(cell => cell.textContent = '-'); navigateToFormStep('1a'); }
     function resetCalibrationState() { isValidated = false; calibrationState = { instrumentData: {}, calibrationData: { ideal: [], measured: [], errors: [], ideal_mA: [], measured_mA: [], errors_mA: [] }, span: 0, errorThreshold_mA: 0, chart: null, equation: { m: 0, b: 0, formatted: '' } }; }
@@ -108,7 +127,24 @@ async function initializeMainApp() {
     function validateMeasuredInputs() { for (const input of document.querySelectorAll('.measured-input')) { if (!isValidNumber(getValue(input))) { showError('Por favor, ingrese valores medidos numéricos y válidos.'); return false; } } hideError(); return true; }
     function isWithinTolerance(error, tolerance) { const epsilon = 1e-9; return Math.abs(error) <= (tolerance + epsilon); }
     function calculateAndDisplayErrors() { const data = calibrationState.calibrationData; const equation = calibrationState.equation; data.measured = Array.from(document.querySelectorAll('.measured-input')).map(input => parseFloat(getValue(input))); data.errors = data.ideal.map((ideal, i) => data.measured[i] - ideal); data.ideal_mA = [4, 8, 12, 16, 20]; data.measured_mA = data.measured.map(pv => (equation.m * pv) + equation.b); data.errors_mA = data.ideal_mA.map((ideal, i) => data.measured_mA[i] - ideal); document.getElementById('error-values-row').classList.remove('hidden'); document.querySelectorAll('#error-values-row td:not(:first-child)').forEach((cell, i) => { const errorInPv = data.errors[i]; cell.textContent = parseFloat(errorInPv.toPrecision(6)); cell.classList.remove('error-ok', 'error-fail'); cell.classList.add(isWithinTolerance(data.errors_mA[i], calibrationState.errorThreshold_mA) ? 'error-ok' : 'error-fail'); }); }
-    function prepareReportStep() { const { tag } = calibrationState.instrumentData; const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA)); document.getElementById('summary-tag').textContent = tag; document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES'); const resultSpan = document.getElementById('summary-result'); resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)'; resultSpan.className = isOk ? 'error-ok' : 'error-fail'; document.getElementById('summary-equation').textContent = calibrationState.equation.formatted; document.getElementById('summary-equation').classList.remove('hidden'); updateChart(); }
+    function prepareReportStep() {
+        const { tag } = calibrationState.instrumentData;
+        const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
+        document.getElementById('summary-tag').textContent = tag;
+        document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const resultSpan = document.getElementById('summary-result');
+        resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)';
+        resultSpan.className = isOk ? 'error-ok' : 'error-fail';
+        document.getElementById('summary-equation').textContent = calibrationState.equation.formatted;
+        document.getElementById('summary-equation').classList.remove('hidden');
+        updateChart();
+    }
     function getChartConfig(stateToUse) { const { instrumentData, calibrationData } = stateToUse; const { lrv, urv, pvUnit } = instrumentData; const measuredData = calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationData.measured_mA[i] })); return { type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] }, options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } } }; }
     function updateChart() { if (calibrationState.chart) { calibrationState.chart.destroy(); calibrationState.chart = null; } const ctx = document.getElementById('chart').getContext('2d'); calibrationState.chart = new Chart(ctx, getChartConfig(calibrationState)); }
     
@@ -123,7 +159,13 @@ async function initializeMainApp() {
         if (sessionState.companyLogo) { try { const imgProps = doc.getImageProperties(sessionState.companyLogo); const logoHeight = 12; const logoWidth = (imgProps.width * logoHeight) / imgProps.height; doc.addImage(sessionState.companyLogo, 'PNG', 14, finalY + 1.5, logoWidth, logoHeight); } catch (e) { console.error("Error al agregar el logo al PDF:", e); } }
         doc.setFontSize(18); doc.text("Reporte de Calibración de Instrumento", doc.internal.pageSize.getWidth() / 2, finalY + 7.5, { align: "center", baseline: 'middle' }); finalY += 14;
         if (sessionState.executingCompany) { doc.setFontSize(10); doc.setTextColor(100); doc.text(`Ejecutado por: ${sessionState.executingCompany}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); doc.setTextColor(0); finalY += 5; }
-        doc.setFontSize(8); doc.text(`Fecha: ${new Date().toLocaleString('es-ES')}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); finalY += 8;
+        doc.setFontSize(8); doc.text(`Fecha: ${new Date().toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); finalY += 8;
         doc.setFontSize(11); doc.text("1. Datos del Instrumento", 14, finalY); finalY += 2;
         doc.autoTable({ ...tableStyles, startY: finalY, theme: 'striped', margin: { left: 14, right: 14 }, head: [['Parámetro', 'Valor']], body: [['TAG', instrumentData.tag], ['Tipo de Instrumento', instrumentData.instrumentType], ['Marca', instrumentData.brand], ['Modelo', instrumentData.model], ['Nº de Serie', instrumentData.serialNumber], ['Alimentación', instrumentData.power], ['Protocolo', instrumentData.protocol], ['Área de Trabajo', instrumentData.workArea], ['Rango', `${instrumentData.lrv} a ${instrumentData.urv} ${instrumentData.pvUnit}`],].filter(row => row[1]), });
         finalY = doc.lastAutoTable.finalY + 6;
@@ -215,7 +257,7 @@ async function initializeMainApp() {
         try {
             const reportMetadata = {
                 tag: stateToSave.instrumentData.tag,
-                date: new Date().toISOString(),
+                date: new Date().toISOString(), // Esta fecha incluye segundos, pero solo es para la DB
                 client: stateToSave.instrumentData.clientName || sessionState.executingCompany || 'Interno',
                 result: isOk ? 'APROBADO' : 'RECHAZADO',
                 pdfFileName: `Reporte_Calibracion_${stateToSave.instrumentData.tag}.pdf`,
