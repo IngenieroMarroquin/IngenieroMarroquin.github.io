@@ -17,10 +17,18 @@ function showActivationError(message) { const activationErrorDiv = document.getE
 function hideActivationError() { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.classList.add('hidden'); } }
 function checkLicenseAndInitialize() { const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY); const activationStep = document.getElementById('step-0-activation'); const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)'); if (licenseStatus === 'VALID') { activationStep.style.display = 'none'; document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active')); document.getElementById('step-home').classList.add('active'); initializeMainApp(); } else { activationStep.style.display = 'block'; activationStep.classList.add('active'); appSections.forEach(step => step.style.display = 'none'); } }
 
+// --- FUNCIÓN DE UTILIDAD PARA FORMATEAR FECHAS ---
+function formatDateForDisplay(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Los meses son base 0
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year}, ${hours}:${minutes}`;
+}
+
 // --- FUNCIÓN DE UTILIDAD CLAVE PARA CREAR UN ESTADO SERIALIZABLE (DTO) ---
 function getSerializableState(state) {
-    // Clona solo las propiedades serializables y primitivas del estado,
-    // ignorando cualquier objeto complejo como la instancia del gráfico.
     const cleanState = {
         instrumentData: { ...state.instrumentData },
         calibrationData: {
@@ -109,7 +117,7 @@ async function initializeMainApp() {
             const item = document.createElement('div');
             item.className = 'history-item';
             item.dataset.id = report.id;
-            item.innerHTML = `<div class="history-item-info"><span class="history-item-tag">${sanitizeHTML(report.tag)}</span><span class="history-item-date">${new Date(report.date).toLocaleString('es-ES', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><div class="history-item-actions"><button data-id="${report.id}" class="btn-delete-report" title="Borrar este reporte">🗑️</button></div>`;
+            item.innerHTML = `<div class="history-item-info"><span class="history-item-tag">${sanitizeHTML(report.tag)}</span><span class="history-item-date">${formatDateForDisplay(new Date(report.date))}</span></div><div class="history-item-actions"><button data-id="${report.id}" class="btn-delete-report" title="Borrar este reporte">🗑️</button></div>`;
             historyListContainer.appendChild(item);
         });
     }
@@ -131,13 +139,7 @@ async function initializeMainApp() {
         const { tag } = calibrationState.instrumentData;
         const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA));
         document.getElementById('summary-tag').textContent = tag;
-        document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        document.getElementById('summary-date').textContent = formatDateForDisplay(new Date());
         const resultSpan = document.getElementById('summary-result');
         resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)';
         resultSpan.className = isOk ? 'error-ok' : 'error-fail';
@@ -159,13 +161,7 @@ async function initializeMainApp() {
         if (sessionState.companyLogo) { try { const imgProps = doc.getImageProperties(sessionState.companyLogo); const logoHeight = 12; const logoWidth = (imgProps.width * logoHeight) / imgProps.height; doc.addImage(sessionState.companyLogo, 'PNG', 14, finalY + 1.5, logoWidth, logoHeight); } catch (e) { console.error("Error al agregar el logo al PDF:", e); } }
         doc.setFontSize(18); doc.text("Reporte de Calibración de Instrumento", doc.internal.pageSize.getWidth() / 2, finalY + 7.5, { align: "center", baseline: 'middle' }); finalY += 14;
         if (sessionState.executingCompany) { doc.setFontSize(10); doc.setTextColor(100); doc.text(`Ejecutado por: ${sessionState.executingCompany}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); doc.setTextColor(0); finalY += 5; }
-        doc.setFontSize(8); doc.text(`Fecha: ${new Date().toLocaleString('es-ES', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); finalY += 8;
+        doc.setFontSize(8); doc.text(`Fecha: ${formatDateForDisplay(new Date())}`, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); finalY += 8;
         doc.setFontSize(11); doc.text("1. Datos del Instrumento", 14, finalY); finalY += 2;
         doc.autoTable({ ...tableStyles, startY: finalY, theme: 'striped', margin: { left: 14, right: 14 }, head: [['Parámetro', 'Valor']], body: [['TAG', instrumentData.tag], ['Tipo de Instrumento', instrumentData.instrumentType], ['Marca', instrumentData.brand], ['Modelo', instrumentData.model], ['Nº de Serie', instrumentData.serialNumber], ['Alimentación', instrumentData.power], ['Protocolo', instrumentData.protocol], ['Área de Trabajo', instrumentData.workArea], ['Rango', `${instrumentData.lrv} a ${instrumentData.urv} ${instrumentData.pvUnit}`],].filter(row => row[1]), });
         finalY = doc.lastAutoTable.finalY + 6;
@@ -246,18 +242,13 @@ async function initializeMainApp() {
     
     // --- LÓGICA DE GENERACIÓN Y GUARDADO DE PDF (REESTRUCTURADA DEFINITIVAMENTE) ---
     if (generatePdfBtn) generatePdfBtn.addEventListener('click', async () => {
-        // 1. Crear el DTO limpio ANTES de cualquier otra cosa.
         const stateToSave = getSerializableState(calibrationState);
         const isOk = stateToSave.calibrationData.errors_mA.every(e => isWithinTolerance(e, stateToSave.errorThreshold_mA));
-
-        // 2. Generar el PDF.
         await generatePDF(calibrationState);
-
-        // 3. Guardar el DTO limpio en la base de datos.
         try {
             const reportMetadata = {
                 tag: stateToSave.instrumentData.tag,
-                date: new Date().toISOString(), // Esta fecha incluye segundos, pero solo es para la DB
+                date: new Date().toISOString(),
                 client: stateToSave.instrumentData.clientName || sessionState.executingCompany || 'Interno',
                 result: isOk ? 'APROBADO' : 'RECHAZADO',
                 pdfFileName: `Reporte_Calibracion_${stateToSave.instrumentData.tag}.pdf`,
