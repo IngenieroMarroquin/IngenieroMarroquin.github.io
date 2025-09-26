@@ -15,6 +15,21 @@ async function handleActivation() { const activateBtn = document.getElementById(
 function showActivationError(message) { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.textContent = message; activationErrorDiv.classList.remove('hidden'); } }
 function hideActivationError() { const activationErrorDiv = document.getElementById('activation-error-message'); if (activationErrorDiv) { activationErrorDiv.classList.add('hidden'); } }
 function checkLicenseAndInitialize() { const licenseStatus = localStorage.getItem(LICENSE_STORAGE_KEY); const activationStep = document.getElementById('step-0-activation'); const appSections = document.querySelectorAll('.app-step:not(#step-0-activation)'); if (licenseStatus === 'VALID') { activationStep.style.display = 'none'; document.querySelectorAll('.app-step').forEach(s => s.classList.remove('active')); document.getElementById('step-home').classList.add('active'); initializeMainApp(); } else { activationStep.style.display = 'block'; activationStep.classList.add('active'); appSections.forEach(step => step.style.display = 'none'); } }
+
+// --- NUEVA FUNCIÓN DE UTILIDAD PARA CREAR UN ESTADO SERIALIZABLE ---
+function getSerializableState(state) {
+    // Se usa JSON.parse(JSON.stringify(...)) como una forma rápida de hacer una copia profunda
+    // de los datos que SÍ son serializables, descartando cualquier instancia de clase o referencia circular.
+    const cleanState = {
+        instrumentData: JSON.parse(JSON.stringify(state.instrumentData || {})),
+        calibrationData: JSON.parse(JSON.stringify(state.calibrationData || {})),
+        span: state.span,
+        errorThreshold_mA: state.errorThreshold_mA,
+        equation: state.equation
+    };
+    return cleanState;
+}
+
 async function initializeMainApp() {
     const steps = { home: document.getElementById('step-home'), step1: document.getElementById('step-1-datasheet'), step2: document.getElementById('step-2-calibration'), step3: document.getElementById('step-3-report'), history: document.getElementById('step-4-history'), };
     const formSteps = { '1a': document.getElementById('form-step-1a'), '1b': document.getElementById('form-step-1b'), '1c': document.getElementById('form-step-1c') };
@@ -55,15 +70,15 @@ async function initializeMainApp() {
             const count = reports.length;
             if (count === 0) {
                 summaryP.textContent = "No hay reportes guardados.";
-                historyBtn.classList.add('hidden'); // Ocultar el botón
+                historyBtn.classList.add('hidden');
             } else {
                 summaryP.textContent = count === 1 ? "Hay 1 reporte guardado." : `Hay ${count} reportes guardados.`;
-                historyBtn.classList.remove('hidden'); // Mostrar el botón
+                historyBtn.classList.remove('hidden');
             }
         } catch (error) {
             console.error("Error al actualizar el resumen del panel:", error);
             summaryP.textContent = "No se pudo acceder al historial.";
-            historyBtn.classList.add('hidden'); // Ocultar por seguridad en caso de error
+            historyBtn.classList.add('hidden');
         }
     }
     function scrollToActiveInput(activeElement) { if (!activeElement || !customKeyboard.classList.contains('visible')) return; const keyboardHeight = customKeyboard.offsetHeight; const elementRect = activeElement.getBoundingClientRect(); const viewportHeight = window.innerHeight; const elementBottomPosition = elementRect.bottom; const keyboardTopPosition = viewportHeight - keyboardHeight; if (elementBottomPosition > keyboardTopPosition) { const scrollAmount = elementBottomPosition - keyboardTopPosition + 20; window.scrollBy({ top: scrollAmount, behavior: 'smooth' }); } }
@@ -88,11 +103,9 @@ async function initializeMainApp() {
     function prepareReportStep() { const { tag } = calibrationState.instrumentData; const isOk = calibrationState.calibrationData.errors_mA.every(e => isWithinTolerance(e, calibrationState.errorThreshold_mA)); document.getElementById('summary-tag').textContent = tag; document.getElementById('summary-date').textContent = new Date().toLocaleString('es-ES'); const resultSpan = document.getElementById('summary-result'); resultSpan.textContent = isOk ? 'APROBADO (Dentro de Tolerancia)' : 'RECHAZADO (Fuera de Tolerancia)'; resultSpan.className = isOk ? 'error-ok' : 'error-fail'; document.getElementById('summary-equation').textContent = calibrationState.equation.formatted; document.getElementById('summary-equation').classList.remove('hidden'); updateChart(); }
     function getChartConfig(stateToUse) { const { instrumentData, calibrationData } = stateToUse; const { lrv, urv, pvUnit } = instrumentData; const measuredData = calibrationData.ideal.map((val, i) => ({ x: val, y: calibrationData.measured_mA[i] })); return { type: 'line', data: { datasets: [{ label: 'Comportamiento Ideal (4-20mA)', data: [{ x: lrv, y: 4 }, { x: urv, y: 20 }], borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 2, tension: 0.1, pointRadius: 0 }, { label: 'Comportamiento Medido', data: measuredData, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, tension: 0.1, }] }, options: { responsive: true, maintainAspectRatio: true, scales: { x: { type: 'linear', title: { display: true, text: `Valor de Proceso (${pvUnit})`, color: '#333' }, ticks: { color: '#333' } }, y: { min: 0, max: 24, title: { display: true, text: 'Corriente (mA)', color: '#333' }, ticks: { color: '#333', stepSize: 4 } } }, plugins: { legend: { labels: { color: '#333' } }, datalabels: { color: '#c0392b', font: { weight: 'bold' }, formatter: (v, c) => c.datasetIndex === 1 ? v.y.toFixed(2) : null, align: c => c.dataIndex === c.dataset.data.length - 1 ? 'left' : 'top', anchor: 'end', offset: 4, display: 'auto' } } } }; }
     function updateChart() { if (calibrationState.chart) { calibrationState.chart.destroy(); calibrationState.chart = null; } const ctx = document.getElementById('chart').getContext('2d'); calibrationState.chart = new Chart(ctx, getChartConfig(calibrationState)); }
-    
-    // --- FUNCIÓN generatePDF MODIFICADA ---
-    async function generatePDF(stateForPdf, stateToSaveFinal = null) {
+    async function generatePDF(stateToUse) {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateForPdf;
+        const { instrumentData, calibrationData, equation, errorThreshold_mA } = stateToUse;
         const isOk = calibrationData.errors_mA.every(e => isWithinTolerance(e, errorThreshold_mA));
         let finalY = 10;
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -124,7 +137,7 @@ async function initializeMainApp() {
         doc.text(`Resultado General: ${isOk ? 'APROBADO' : 'RECHAZADO'}`, 14, finalY);
         doc.setTextColor(0, 0, 0); finalY += 8;
         const offscreenContainer = document.createElement('div'); offscreenContainer.style.position = 'absolute'; offscreenContainer.style.left = '-9999px'; offscreenContainer.style.width = '800px'; offscreenContainer.style.height = '450px'; const offscreenCanvas = document.createElement('canvas'); offscreenContainer.appendChild(offscreenCanvas); document.body.appendChild(offscreenContainer);
-        const chartConfig = getChartConfig(stateForPdf); // Usar stateForPdf aquí
+        const chartConfig = getChartConfig(stateToUse);
         chartConfig.options.animation = false; const tempChart = new Chart(offscreenCanvas.getContext('2d'), chartConfig); await new Promise(resolve => setTimeout(resolve, 200)); const chartImage = tempChart.toBase64Image(); tempChart.destroy(); document.body.removeChild(offscreenContainer);
         const pageWidth = doc.internal.pageSize.getWidth(); const chartWidth = pageWidth - 28; const chartHeight = (chartWidth * 450) / 800; doc.addImage(chartImage, 'PNG', 14, finalY, chartWidth, chartHeight); finalY += chartHeight + 8;
         doc.setFont('courier', 'bold'); doc.setFontSize(9); doc.text(equation.formatted, doc.internal.pageSize.getWidth() / 2, finalY, { align: "center" }); doc.setFont('helvetica', 'normal'); finalY += 8;
@@ -135,24 +148,6 @@ async function initializeMainApp() {
         doc.setFontSize(8); doc.setTextColor(100); doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
         
         doc.save(`Reporte_Calibracion_${instrumentData.tag}.pdf`);
-
-        if (stateToSaveFinal) { // Solo guarda si se pasó el estado para guardar
-            try {
-                const finalInstrumentData = stateToSaveFinal.instrumentData;
-                const reportMetadata = {
-                    tag: finalInstrumentData.tag,
-                    date: new Date().toISOString(),
-                    client: finalInstrumentData.clientName || sessionState.executingCompany || 'Interno',
-                    result: isOk ? 'APROBADO' : 'RECHAZADO',
-                    pdfFileName: `Reporte_Calibracion_${finalInstrumentData.tag}.pdf`,
-                    fullState: stateToSaveFinal
-                };
-                await window.dbManager.addReport(reportMetadata);
-                console.log('Metadatos del reporte guardados en el historial offline.');
-            } catch (error) {
-                console.error('Error al guardar el reporte en el historial offline:', error);
-            }
-        }
     }
     
     // ASIGNACIÓN DE EVENT LISTENERS
@@ -177,7 +172,7 @@ async function initializeMainApp() {
             try {
                 const report = await window.dbManager.getReportById(reportId);
                 if (report && report.fullState) {
-                    await generatePDF(report.fullState); // No se pasa el segundo argumento
+                    await generatePDF(report.fullState);
                 } else {
                     alert('No se pudieron recuperar los datos completos para re-generar este reporte.');
                 }
@@ -198,16 +193,31 @@ async function initializeMainApp() {
     if (validateBtn) validateBtn.addEventListener('click', () => { if (!isValidated) { if (validateMeasuredInputs()) { calculateAndDisplayErrors(); isValidated = true; validateBtn.textContent = 'Continuar'; resetMeasurementBtn.disabled = true; backToStep1Btn.disabled = true; } } else { prepareReportStep(); navigateToAppStep('step3'); } });
     if (resetMeasurementBtn) resetMeasurementBtn.addEventListener('click', () => { document.querySelectorAll('.measured-input').forEach(input => input.textContent = ''); document.querySelectorAll('#error-values-row td:not(:first-child)').forEach(cell => { cell.textContent = '-'; cell.classList.remove('error-ok', 'error-fail'); }); document.getElementById('error-values-row').classList.add('hidden'); hideError(); });
     
-    // --- LLAMADA AL generatePDF MODIFICADA ---
-    if (generatePdfBtn) generatePdfBtn.addEventListener('click', () => {
-        // Se crea una copia profunda para el PDF y otra para la BD
-        const stateForPdf = JSON.parse(JSON.stringify(calibrationState));
-        delete stateForPdf.chart;
-        
-        const stateToSave = JSON.parse(JSON.stringify(calibrationState));
-        delete stateToSave.chart;
+    // --- LÓGICA DE GENERACIÓN Y GUARDADO DE PDF (REESTRUCTURADA) ---
+    if (generatePdfBtn) generatePdfBtn.addEventListener('click', async () => {
+        // 1. Crear un estado limpio y serializable ANTES de cualquier otra cosa.
+        const stateToSave = getSerializableState(calibrationState);
+        const isOk = stateToSave.calibrationData.errors_mA.every(e => isWithinTolerance(e, stateToSave.errorThreshold_mA));
 
-        generatePDF(stateForPdf, stateToSave);
+        // 2. Generar el PDF usando el estado "vivo" (calibrationState) que contiene el gráfico.
+        await generatePDF(calibrationState);
+
+        // 3. Guardar el estado limpio y seguro en la base de datos.
+        try {
+            const reportMetadata = {
+                tag: stateToSave.instrumentData.tag,
+                date: new Date().toISOString(),
+                client: stateToSave.instrumentData.clientName || sessionState.executingCompany || 'Interno',
+                result: isOk ? 'APROBADO' : 'RECHAZADO',
+                pdfFileName: `Reporte_Calibracion_${stateToSave.instrumentData.tag}.pdf`,
+                fullState: stateToSave
+            };
+            await window.dbManager.addReport(reportMetadata);
+            console.log('Metadatos del reporte guardados en el historial offline con ÉXITO.');
+        } catch (error) {
+            console.error('Error CRÍTICO al guardar el reporte en el historial offline:', error);
+            showError("No se pudo guardar el reporte en el historial. Contacte a soporte.");
+        }
     });
 
     if (fullResetBtn) fullResetBtn.addEventListener('click', () => { softReset(); updateDashboardSummary(); navigateToAppStep('home'); });
