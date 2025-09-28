@@ -6,7 +6,7 @@
   <title>SignalCheck Pro</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=6.0.0">
+  <link rel="stylesheet" href="style.css?v=7.0.0">
   <script src="libs/chart.umd.js"></script>
   <script src="libs/chartjs-plugin-datalabels.min.js"></script>
   <script src="libs/jspdf.umd.min.js"></script>
@@ -18,10 +18,7 @@
       <h1>SignalCheck Pro</h1>
       <p class="subtitle">by Ingeniero Marroquin</p>
       <p>Herramienta de Calibración y Certificación de Instrumentos</p>
-      <div id="stopwatch-container" class="hidden">
-        <span>Tiempo de Prueba:</span>
-        <strong id="stopwatch-display">00:00:00</strong>
-      </div>
+      <!-- El cronómetro visible ha sido eliminado -->
     </header>
     <section id="step-0-activation" class="app-step">
       <h2>Activación de SignalCheck PRO</h2>
@@ -111,6 +108,16 @@
         <div class="chart-container"><canvas id="chart"></canvas></div>
         <p id="summary-equation" class="hidden"></p>
       </div>
+      <!-- NUEVA SECCIÓN DE OPCIONES -->
+      <div class="input-group-horizontal" id="duration-option-group">
+        <label>Incluir duración de la Calibración:</label>
+        <div class="radio-group">
+          <input type="radio" id="durationYes" name="includeDuration" value="yes" checked>
+          <label for="durationYes">SI</label>
+          <input type="radio" id="durationNo" name="includeDuration" value="no">
+          <label for="durationNo">NO</label>
+        </div>
+      </div>
       <div class="button-group-vertical">
         <button id="generatePdfBtn" class="btn-export">Generar Reporte PDF</button>
         <button id="fullResetBtn" class="btn-primary" style="margin-top: 1rem;">Volver al Panel de Control</button>
@@ -136,6 +143,6 @@
       <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">OK</button>
     </div>
   </div>
-  <script src="script.js?v=6.0.0"></script>
+  <script src="script.js?v=7.0.0"></script>
 </body>
 </html>
