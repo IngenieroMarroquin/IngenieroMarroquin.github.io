@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = 'signalcheck-pro-v6.0.0';
+const CACHE_NAME = 'signalcheck-pro-v6.0.1';
 
 // Lista de archivos finales que estarán en la carpeta 'dist'.
 const urlsToCache = [
