@@ -139,18 +139,6 @@
       <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">OK</button>
     </div>
   </div>
-
   <script src="script.js?v=7.0.0"></script>
-  
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
-          console.log('Service Worker ANHILADO:', registration);
-        }
-      });
-    }
-  </script>
-  </body>
+</body>
 </html>
