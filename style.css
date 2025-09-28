@@ -501,27 +501,6 @@ header .subtitle {
   animation: spin 1s ease-in-out infinite;
 }
 
-.input-group-horizontal {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: var(--bg-color);
-    padding: 1rem;
-    border-radius: 6px;
-    margin-top: 1.5rem;
-    border: 1px solid var(--secondary-button-bg);
-}
-
-.radio-group {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.radio-group label {
-    cursor: pointer;
-    margin-left: 0.25rem;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
