@@ -1,8 +1,7 @@
 // service-worker.js
 
-const CACHE_NAME = 'signalcheck-pro-v7.0.0';
+const CACHE_NAME = 'signalcheck-pro-v7.0.1'; // Incrementamos la versión
 
-// Lista de archivos finales que estarán en la carpeta 'dist'.
 const urlsToCache = [
     '/',
     'index.html',
@@ -17,7 +16,6 @@ const urlsToCache = [
     'images/icons/icon-512x512.png'
 ];
 
-// Evento 'install': Cachea los archivos fundamentales de la app.
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -29,7 +27,6 @@ self.addEventListener('install', event => {
     );
 });
 
-// Evento 'activate': Limpia los cachés antiguos.
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -45,13 +42,24 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Evento 'fetch': Estrategia "Cache First".
-// Sirve desde el caché. Si no está en caché, va a la red.
 self.addEventListener('fetch', event => {
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Si la petición no es GET, el SW no la gestiona.
+    // Esto evita el error con las peticiones POST de la API.
+    if (event.request.method !== 'GET') {
+        return; 
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
     event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                return response || fetch(event.request);
-            })
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then(response => {
+                const fetchPromise = fetch(event.request).then(networkResponse => {
+                    cache.put(event.request, networkResponse.clone());
+                    return networkResponse;
+                });
+                return response || fetchPromise;
+            });
+        })
     );
 });
