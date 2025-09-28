@@ -1,6 +1,5 @@
 // service-worker.js
-
-const CACHE_NAME = 'signalcheck-pro-v7.0.1'; // Incrementamos la versión
+const CACHE_NAME = 'signalcheck-pro-v9.0.0';
 
 const urlsToCache = [
     '/',
@@ -43,23 +42,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Si la petición no es GET, el SW no la gestiona.
-    // Esto evita el error con las peticiones POST de la API.
     if (event.request.method !== 'GET') {
-        return; 
+        return;
     }
-    // --- FIN DE LA CORRECCIÓN ---
-
     event.respondWith(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.match(event.request).then(response => {
-                const fetchPromise = fetch(event.request).then(networkResponse => {
-                    cache.put(event.request, networkResponse.clone());
-                    return networkResponse;
-                });
-                return response || fetchPromise;
-            });
-        })
+        caches.match(event.request)
+            .then(response => {
+                return response || fetch(event.request);
+            })
     );
 });
