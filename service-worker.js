@@ -1,15 +1,13 @@
 // service-worker.js
 
-// 1. Nombramos el caché con una versión. 
-// ¡CAMBIE ESTE NÚMERO CADA VEZ QUE DESPLIEGUE UNA ACTUALIZACIÓN CRÍTICA!
-const CACHE_NAME = 'signalcheck-pro-v5.0.0'; // Siguiente versión
+const CACHE_NAME = 'signalcheck-pro-v6.0.0';
 
-// 2. Listamos los archivos FINALES que estarán en la carpeta 'dist'.
+// Lista de archivos finales que estarán en la carpeta 'dist'.
 const urlsToCache = [
     '/',
     'index.html',
     'style.css',
-    'script.js', // Este es el script combinado y ofuscado
+    'script.js',
     'manifest.json',
     'libs/chart.umd.js',
     'libs/chartjs-plugin-datalabels.min.js',
@@ -17,22 +15,21 @@ const urlsToCache = [
     'libs/jspdf.plugin.autotable.min.js',
     'images/icons/icon-192x192.png',
     'images/icons/icon-512x512.png'
-    // Nota: dbManager.js ya no es necesario aquí
 ];
 
-// 3. Evento 'install': Cachea los archivos fundamentales de la app.
+// Evento 'install': Cachea los archivos fundamentales de la app.
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Service Worker: Precargando archivos en caché v5.0.0...');
+                console.log(`Service Worker: Precargando archivos en caché ${CACHE_NAME}...`);
                 return cache.addAll(urlsToCache);
             })
-            .then(() => self.skipWaiting()) // Activa el nuevo SW inmediatamente
+            .then(() => self.skipWaiting())
     );
 });
 
-// 4. Evento 'activate': Limpia los cachés antiguos para liberar espacio.
+// Evento 'activate': Limpia los cachés antiguos.
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -44,26 +41,17 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        }).then(() => self.clients.claim()) // Toma control inmediato de la página
+        }).then(() => self.clients.claim())
     );
 });
 
-// 5. Evento 'fetch': Estrategia "Stale-While-Revalidate"
-// Sirve la app desde el caché para máxima velocidad y actualiza en segundo plano.
+// Evento 'fetch': Estrategia "Cache First".
+// Sirve desde el caché. Si no está en caché, va a la red.
 self.addEventListener('fetch', event => {
-    if (!event.request.url.startsWith('http')) {
-        return;
-    }
-
     event.respondWith(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.match(event.request).then(response => {
-                const fetchPromise = fetch(event.request).then(networkResponse => {
-                    cache.put(event.request, networkResponse.clone());
-                    return networkResponse;
-                });
-                return response || fetchPromise; // Devuelve del caché si existe, si no, de la red.
-            });
-        })
+        caches.match(event.request)
+            .then(response => {
+                return response || fetch(event.request);
+            })
     );
 });
