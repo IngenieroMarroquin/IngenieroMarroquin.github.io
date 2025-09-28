@@ -6,7 +6,7 @@
   <title>SignalCheck Pro</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=4.2.0">
+  <link rel="stylesheet" href="style.css?v=6.0.0">
   <script src="libs/chart.umd.js"></script>
   <script src="libs/chartjs-plugin-datalabels.min.js"></script>
   <script src="libs/jspdf.umd.min.js"></script>
@@ -18,6 +18,10 @@
       <h1>SignalCheck Pro</h1>
       <p class="subtitle">by Ingeniero Marroquin</p>
       <p>Herramienta de Calibración y Certificación de Instrumentos</p>
+      <div id="stopwatch-container" class="hidden">
+        <span>Tiempo de Prueba:</span>
+        <strong id="stopwatch-display">00:00:00</strong>
+      </div>
     </header>
     <section id="step-0-activation" class="app-step">
       <h2>Activación de SignalCheck PRO</h2>
@@ -59,10 +63,21 @@
         <div id="form-step-1b" class="form-step-container">
           <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
           <div class="input-grid">
-            <div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div><div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div><div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div><div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div><div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div><div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div><div class="input-group"><label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label><div id="permissibleError" class="numeric-input-field" required>1.0</div></div><div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div><div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div>
+            <div class="input-group"><label for="calibrationDate">Fecha de la Calibración</label><input type="date" id="calibrationDate" required></div>
+            <div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div>
+            <div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div>
+            <div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div>
+            <div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div>
+            <div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div>
+            <div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div>
+            <div class="input-group"><label for="permissibleError-wrapper">Error Permisible (%) (Obligatorio)</label><div id="permissibleError" class="numeric-input-field" required>1.0</div></div>
+            <div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div>
+            <div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div>
             <div class="input-group"><label for="calibratorLastCal">Última Calibración del Patrón</label><input type="date" id="calibratorLastCal"></div>
             <div class="input-group"><label for="calibratorCalDue">Vencimiento Calibración del Patrón</label><input type="date" id="calibratorCalDue"></div>
-            <div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div><div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div><div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
+            <div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div>
+            <div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div>
+            <div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
           </div>
           <div class="button-group"><button type="button" id="backBtn1" class="btn-secondary">Atrás</button><button type="button" id="nextBtn2" class="btn-primary">Siguiente</button></div>
         </div>
@@ -121,7 +136,6 @@
       <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">OK</button>
     </div>
   </div>
-  
-  <script src="script.js?v=4.2.0"></script>
+  <script src="script.js?v=6.0.0"></script>
 </body>
 </html>

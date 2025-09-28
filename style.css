@@ -103,3 +103,21 @@ header .subtitle { font-size: 0.9rem; color: var(--secondary-text-color); margin
   .button-group { flex-direction: column; }
   .button-group .btn-secondary, .button-group .btn-primary { width: 100%; box-sizing: border-box; }
 }
+
+
+/* --- ESTILOS PARA EL CRONÓMETRO --- */
+#stopwatch-container {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: var(--border-radius);
+  color: var(--accent-color);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1rem;
+  text-align: center;
+  display: block;
+}
+
+#stopwatch-container.hidden {
+  display: none;
+}
