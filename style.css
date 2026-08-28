@@ -739,3 +739,72 @@ header .subtitle {
     box-sizing: border-box;
   }
 }
+/* =========================================================================
+   ANCHO DE LAS PANTALLAS CON TABLA DE DATOS
+   -------------------------------------------------------------------------
+   El "main" tenia max-width: 600px, que esta bien para un formulario pero
+   es letal para la tabla de calibracion: con 11 puntos son 12 columnas, y
+   en un monitor de 1366 los campos quedaban de 28 px. Con el padding de
+   0.75rem de la celda mas el del propio input, no cabia ni "12.00": el
+   tecnico escribia a ciegas. Medido: ancho de input 28 px en 1366, 1920 y
+   768. En movil no pasaba porque ahi la tabla se convierte en tarjetas.
+
+   Dos reglas, las dos solo por encima de 700 px para no tocar el movil:
+     1. Las pantallas con tabla ancha pueden usar hasta 1280 px.
+     2. La tabla NO se aplasta: si no cabe, el contenedor se desplaza en
+        horizontal (ya tenia overflow-x: auto) en vez de encoger los
+        campos hasta hacerlos ilegibles.
+   ========================================================================= */
+@media (min-width: 701px) {
+
+  main:has(#step-2-calibration.active),
+  main:has(#step-3-report.active),
+  main:has(#step-4-history.active) {
+    max-width: min(1280px, 96vw);
+  }
+
+  /* Nunca por debajo de lo legible: el ancho minimo va en las CELDAS, no
+     en la tabla. Con max-content en la tabla el navegador sumaba el ancho
+     "natural" de unos inputs que ya eran width:100%, y salian columnas de
+     222 px: se arreglaba lo ilegible creando scroll donde no hacia falta.
+     Con min-width por celda la tabla ocupa lo justo y solo se desplaza
+     cuando de verdad no cabe. */
+  #calibration-table th,
+  #calibration-table td {
+    padding: 0.5rem 0.4rem;
+    white-space: nowrap;
+    min-width: 84px;   /* alcanza para "120.00" */
+  }
+
+  #calibration-table td .numeric-input-field {
+    padding: 0.5rem 0.35rem;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  /* La primera columna lleva la etiqueta de la fila ("Medido subida
+     (GPM)"). Con nowrap se estiraba a 172 px y empujaba la tabla fuera
+     del contenedor en una pantalla de 1366. Se le permite envolver en
+     dos renglones y se le acota el ancho: el espacio es para los datos. */
+  #calibration-table td:first-child,
+  #calibration-table th:first-child {
+    white-space: normal;
+    min-width: 110px;
+    max-width: 140px;
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  /* Aviso visible de que hay mas columnas a la derecha. */
+  #calibration-table-container {
+    scrollbar-width: thin;
+  }
+}
+
+/* Campo senalado por una validacion fallida. Sin esto, "revise el valor"
+   entre 44 celdas obligaba a buscarlo a ojo. */
+.numeric-input-field.campo-con-error {
+  border-color: var(--fail-color);
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.35);
+  background-color: rgba(231, 76, 60, 0.12);
+}
