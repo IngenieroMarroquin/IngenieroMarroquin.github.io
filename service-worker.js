@@ -17,7 +17,7 @@
 // (se etiqueto asi hace 11 meses), asi que reutilizar ese nombre haria que
 // el SW nuevo escribiera dentro del cache que el SW viejo esta sirviendo, y
 // el resultado seria impredecible. Por eso lleva la fecha de compilacion.
-const CACHE_NAME = 'signalcheck-pro-2026-08-27';
+const CACHE_NAME = 'signalcheck-pro-2026-08-28';
 
 const PRECACHE_URLS = [
     './',
