@@ -1,23 +1,37 @@
 {
   "name": "SignalCheck Pro",
   "short_name": "SignalCheck",
-  "description": "Herramienta de Calibración y Certificación de Instrumentos.",
+  "description": "Calibración y certificación de instrumentos.",
   "id": "/?v=4",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#1c2331",
-  "theme_color": "#2a384c",
+  "background_color": "#000000",
+  "theme_color": "#0A84FF",
   "icons": [
     {
       "src": "images/icons/icon-192x192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
       "src": "images/icons/icon-512x512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "images/icons/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "images/icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
     }
   ]
 }

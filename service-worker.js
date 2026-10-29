@@ -17,7 +17,7 @@
 // (se etiqueto asi hace 11 meses), asi que reutilizar ese nombre haria que
 // el SW nuevo escribiera dentro del cache que el SW viejo esta sirviendo, y
 // el resultado seria impredecible. Por eso lleva la fecha de compilacion.
-const CACHE_NAME = 'signalcheck-pro-2026-08-28b';
+const CACHE_NAME = 'signalcheck-pro-2026-10-29b';
 
 const PRECACHE_URLS = [
     './',
@@ -25,6 +25,10 @@ const PRECACHE_URLS = [
     'style.css',
     'script.js',
     'manifest.json',
+    'config.js',
+    'images/icons/icon.svg',
+    'images/icons/icon-maskable-512.png',
+    'images/icons/apple-touch-icon.png',
     'libs/chart.umd.js',
     'libs/chartjs-plugin-datalabels.min.js',
     'libs/jspdf.umd.min.js',

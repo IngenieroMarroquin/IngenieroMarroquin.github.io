@@ -2,168 +2,369 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>SignalCheck Pro</title>
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SignalCheck">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=9.0.0">
-  <!-- Chart.js, jsPDF, AutoTable y datalabels (~620 KB) se cargaban aqui
-       sin defer, bloqueando el render hasta tenerlos. Solo hacen falta en
-       el paso 3, asi que ahora los pide script.js cuando toca. El service
-       worker los tiene precacheados: tambien funciona sin red. -->
+  <link rel="icon" href="images/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=9.1.0">
+  <!-- El tema elegido se aplica antes de pintar: sin parpadeo claro/oscuro. -->
+  <script>try { var t = localStorage.getItem('signalcheck_tema'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+  <!-- Chart.js, jsPDF, AutoTable y datalabels (~620 KB) los pide script.js
+       cuando hacen falta (paso de resultados). El service worker los tiene
+       precacheados: tambien funciona sin red. -->
 </head>
 <body>
-  <main id="app-container">
-    <header>
-      <h1>SignalCheck Pro</h1>
-      <p class="subtitle">by Ingeniero Marroquin</p>
-      <p>Herramienta de Calibración y Certificación de Instrumentos</p>
-    </header>
-    <section id="step-0-activation" class="app-step">
-      <h2>Activación de SignalCheck PRO</h2>
-      <p>Por favor, introduce tu clave de licencia para activar todas las funcionalidades de la aplicación.</p>
-      <div class="input-grid" style="grid-template-columns: 1fr;"><div class="input-group"><label for="licenseKey">Clave de Licencia</label><input type="text" id="licenseKey" placeholder="SCP-XXXX-XXXX-XXXX" style="text-transform: uppercase;"></div></div>
-      <div class="button-group" style="justify-content: center;"><button type="button" id="activateBtn" class="btn-primary">Activar Licencia</button></div>
-      <div id="activation-error-message" class="hidden" style="margin-top: 1.5rem; padding: 1rem; background-color: var(--error-bg-color); color: white; text-align: center; border-radius: 4px; font-weight: bold;"></div>
-    </section>
-    <section id="step-home" class="app-step">
-        <h2>Panel de Control</h2>
-        <p id="history-summary">Verificando reportes guardados...</p>
-        <div id="backup-warning" class="hidden"></div>
-        <label class="pref-linea" for="prefTecladoGrande">
-          <input type="checkbox" id="prefTecladoGrande">
-          <span>Teclado numérico grande (para uso con guantes)</span>
-        </label>
-        <div class="button-group-vertical">
-            <button id="goToAppBtn" class="btn-primary">Iniciar Nueva Calibración</button>
-            <button id="goToHistoryBtn" class="btn-secondary">Ver Historial de Reportes</button>
-        </div>
-        <p class="app-description">Bienvenido a SignalCheck Pro™, su asistente de campo para la calibración de instrumentos. Inicie una <strong>nueva calibración</strong> para generar un reporte técnico completo en PDF, o acceda al <strong>historial</strong> para consultar y gestionar todos sus reportes guardados directamente en este dispositivo, sin necesidad de conexión a internet.</p>
-    </section>
-    <section id="step-1-datasheet" class="app-step">
-      <form id="instrumentForm">
-        <div id="form-step-1a" class="form-step-container active">
-          <h2>Paso 1.1: Datos del Instrumento y Ubicación</h2>
-          <div class="input-grid">
-            <div class="input-group"><label for="tag">TAG del Instrumento (Obligatorio)</label><input type="text" id="tag" required placeholder="Ej: PT-101A"></div>
-            <div class="input-group"><label for="instrumentType">Tipo de Instrumento</label><input type="text" id="instrumentType" placeholder="Ej: Transmisor de Presión"></div>
-            <div class="input-group"><label for="brand">Marca</label><input type="text" id="brand" placeholder="Ej: Rosemount"></div>
-            <div class="input-group"><label for="model">Modelo</label><input type="text" id="model" placeholder="Ej: 3051S"></div>
-            <div class="input-group"><label for="serialNumber">Nº de Serie</label><input type="text" id="serialNumber" placeholder="Ej: 123456789"></div>
-            <div class="input-group"><label for="power">Alimentación</label><input type="text" id="power" placeholder="Ej: 24 VDC"></div>
-            <div class="input-group"><label for="protocol">Protocolo</label><select id="protocol"><option value="N/A">N/A</option><option value="4 a 20 mA">4 a 20 mA</option><option value="Hart">Hart</option><option value="Foundation Fieldbus">Foundation Fieldbus</option><option value="Profibus">Profibus</option><option value="3 a 15 psi">3 a 15 psi</option><option value="Otro">Otro</option></select></div>
-            <div class="input-group hidden" id="protocolOtherGroup"><label for="protocolOther">Especifique Otro Protocolo</label><input type="text" id="protocolOther"></div>
-            <div class="input-group"><label for="workArea">Área de Trabajo</label><input type="text" id="workArea" placeholder="Ej: Área de Compresores"></div>
-            <div class="input-group"><label for="lrv">Valor Mínimo (LRV) (Obligatorio)</label><input type="text" id="lrv" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Ej: -100 o 0" required></div>
-            <div class="input-group"><label for="urv">Valor Máximo (URV) (Obligatorio)</label><input type="text" id="urv" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Ej: 100" required></div>
-            <div class="input-group"><label for="pvUnit">Unidad de PV (Obligatoria)</label><select id="pvUnit" required><option value="" disabled selected>Seleccione una unidad...</option><optgroup label="Presión"><option value="psi">psi</option><option value="bar">bar</option><option value="inH2O">inH2O</option><option value="mmH2O">mmH2O</option><option value="inHg">inHg</option><option value="mmHg">mmHg</option><option value="kPa">kPa</option><option value="kg/cm²">kg/cm²</option></optgroup><optgroup label="Temperatura"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup><optgroup label="Flujo"><option value="GPM">GPM</option><option value="LPM">LPM</option><option value="m³/h">m³/h</option><option value="ft³/h">ft³/h</option></optgroup><optgroup label="Nivel"><option value="%">%</option><option value="m">m</option><option value="cm">cm</option><option value="ft">ft</option><option value="in">in</option></optgroup><optgroup label="Otras"><option value="pH">pH</option><option value="RPM">RPM</option><option value="Hz">Hz</option></optgroup><option value="custom">Otra (especificar)...</option></select></div>
-            <div class="input-group hidden" id="pvUnitOtherGroup"><label for="pvUnitOther">Especifique Otra Unidad</label><input type="text" id="pvUnitOther"></div>
-          </div>
-          <div class="button-group"><button type="button" id="homeBtn1" class="btn-secondary">Panel de Control</button><button type="button" id="nextBtn1" class="btn-primary">Siguiente</button></div>
-        </div>
-        <div id="form-step-1b" class="form-step-container">
-          <h2>Paso 1.2: Datos de la Prueba y Personal</h2>
-          <div class="input-grid">
-            <div class="input-group"><label for="calibrationDate">Fecha de la Calibración</label><input type="date" id="calibrationDate" required></div>
-            <div class="input-group"><label for="executingCompany">Empresa Ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div>
-            <div class="input-group"><label for="workOrder">Orden de Trabajo</label><input type="text" id="workOrder" placeholder="Ej: OT-2025-001"></div>
-            <div class="input-group"><label for="testType">Lugar de la Prueba</label><select id="testType"><option value="En Taller">En Taller</option><option value="En Campo">En Campo</option></select></div>
-            <div class="input-group"><label for="pointCount">Puntos de Prueba</label>
-              <select id="pointCount">
-                <option value="3">3 puntos (0 - 50 - 100 %)</option>
-                <option value="5" selected>5 puntos (cada 25 %)</option>
-                <option value="9">9 puntos (cada 12,5 %)</option>
-                <option value="11">11 puntos (cada 10 %)</option>
-              </select></div>
-            <div class="input-group"><label for="outputMode">Señal de Salida (mA)</label>
-              <select id="outputMode">
-                <option value="calc" selected>Calculada a partir del PV (no se mide)</option>
-                <option value="medida">Medida con instrumento certificado</option>
-              </select></div>
-            <div class="input-group hidden" id="currentMeterGroup"><label for="currentMeter">Instrumento de Medición de Corriente</label><input type="text" id="currentMeter" placeholder="Ej: Fluke 87V  SN-4455"></div>
-            <div class="input-group"><label for="testDirection">Recorrido del Ensayo</label><select id="testDirection"><option value="asc-desc" selected>Subida y bajada (histéresis) &#8212; IEC 60770-1</option><option value="asc">Solo subida (verificación rápida)</option></select></div><div class="input-group"><label for="testCondition">Condición de la Prueba</label><select id="testCondition"><option value="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left">As-Left (Tal como se dejó)</option></select></div>
-            <div class="input-group"><label for="clientType">Cliente</label><select id="clientType"><option value="Interno">Interno</option><option value="Externo">Externo</option></select></div>
-            <div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del Cliente Externo</label><input type="text" id="clientName" placeholder="Nombre de la empresa cliente"></div>
-            <div class="input-group"><label for="permissibleError">Error Permisible (%) (Obligatorio)</label><input type="text" id="permissibleError" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="1.0" required></div>
-            <div class="input-group"><label for="hysteresisTolerance">Histéresis Permisible (%) &mdash; opcional</label><input type="text" id="hysteresisTolerance" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Vacío = igual al error permisible"></div>
-            <div class="input-group"><label for="calibrator">Equipo de Calibración (Patrón)</label><input type="text" id="calibrator" placeholder="Ej: Fluke 754"></div>
-            <div class="input-group"><label for="calibratorSerialNumber">Nº de Serie del Patrón</label><input type="text" id="calibratorSerialNumber" placeholder="Ej: SN-987654321"></div>
-            <div class="input-group"><label for="calibratorLastCal">Última Calibración del Patrón</label><input type="date" id="calibratorLastCal"></div>
-            <div class="input-group"><label for="calibratorCalDue">Vencimiento Calibración del Patrón</label><input type="date" id="calibratorCalDue"></div>
-            <div class="input-group"><label for="technician">Técnico Ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico"></div><div class="input-group"><label for="workLead">Responsable del Trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div><div class="input-group"><label for="supervisor">Supervisor de Operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
-          
-          </div>
-          <details id="uncertainty-block">
-            <summary>Incertidumbre de medición (opcional)</summary>
-            <p class="ayuda">Declare los componentes que conoce. La incertidumbre combinada y la expandida se calculan; no se editan. Si deja vacía la del patrón, el reporte no incluye esta sección.</p>
-            <div class="input-grid">
-              <div class="input-group"><label for="stdUncertainty">Incertidumbre expandida del patrón U (% del span)</label><input type="text" id="stdUncertainty" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Del certificado del patrón"></div>
-              <div class="input-group"><label for="stdUncertaintyK">Factor k del certificado del patrón</label><input type="text" id="stdUncertaintyK" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="2"></div>
-              <div class="input-group"><label for="resolutionUUT">Resolución del instrumento (en unidades de PV)</label><input type="text" id="resolutionUUT" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Ej: 0.01"></div>
-              <div class="input-group"><label for="coverageK">Factor de cobertura k para el reporte</label><input type="text" id="coverageK" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="2"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="g-icono" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A84FF"/><stop offset="1" stop-color="#30D0C0"/></linearGradient>
+    </defs>
+    <symbol id="i-app" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#g-icono)"/><path d="M14 40a18 18 0 0 1 36 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".95"/><path d="M32 40 41 25" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="40" r="4.5" fill="#fff"/><path d="M18 48h28" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/></symbol>
+    <symbol id="i-inicio" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-calibrar" viewBox="0 0 24 24"><path d="M4 16a8 8 0 1 1 16 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 16l4-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="1.6" fill="currentColor"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-historial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.9-1.5-1.9-3.3-2.3.9a7.5 7.5 0 0 0-2.6-1.5L14.1 2.6h-3.8l-.4 2.5a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9L3.1 9l1.9 1.5a7.6 7.6 0 0 0 0 3L3.1 15l1.9 3.3 2.3-.9a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h3.8l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.3.9 1.9-3.3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-atras" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-falla" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8.5 8.5l7 7m0-7-7 7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 3.2 1.9 20.5h20.2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.25" fill="#fff"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 2.8h8l4.5 4.5V20a1.2 1.2 0 0 1-1.2 1.2H6A1.2 1.2 0 0 1 4.8 20V4A1.2 1.2 0 0 1 6 2.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2.8v4.5h4.5M8.5 12.5h7m-7 3.5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-papelera" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4.5h5v2m-8 0 .8 13.2a1.3 1.3 0 0 0 1.3 1.3h6.8a1.3 1.3 0 0 0 1.3-1.3l.8-13.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 15V3.5m-4.5 4.5L12 3.5l4.5 4.5M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bajar" viewBox="0 0 24 24"><path d="M12 3.5V15m-4.5-4.5L12 15l4.5-4.5M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-foto" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9.5" r="1.8" fill="currentColor"/><path d="M3.5 17l5-5 4 4 2.5-2.5 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-llave" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11.3 11.7 19.5 3.5m-3 3 2.5 2.5m-5-0.5 2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-sobre" viewBox="0 0 24 24"><rect x="2.8" y="5" width="18.4" height="14" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-recargar" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4h-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11m0-11-11 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <div class="app" id="app">
+    <!-- Barra lateral (escritorio, como en macOS) -->
+    <nav class="sidebar" aria-label="Secciones">
+      <div class="sidebar-marca"><svg class="icono-app"><use href="#i-app"/></svg><div><strong>SignalCheck Pro</strong><span>by Ingeniero Marroquín</span></div></div>
+      <button type="button" class="nav-item" data-ir="home"><svg class="ic"><use href="#i-inicio"/></svg>Inicio</button>
+      <button type="button" class="nav-item" data-ir="calibrar"><svg class="ic"><use href="#i-calibrar"/></svg>Calibrar</button>
+      <button type="button" class="nav-item" data-ir="history"><svg class="ic"><use href="#i-historial"/></svg>Historial</button>
+      <button type="button" class="nav-item" data-ir="settings"><svg class="ic"><use href="#i-ajustes"/></svg>Ajustes</button>
+      <div class="sidebar-pie" id="sidebar-licencia"></div>
+    </nav>
+
+    <div class="contenido">
+      <header class="navbar" id="navbar">
+        <button type="button" class="nav-atras hidden" id="nav-atras"><svg class="ic"><use href="#i-atras"/></svg><span id="nav-atras-texto">Inicio</span></button>
+        <span class="navbar-titulo" id="navbar-titulo">SignalCheck Pro</span>
+      </header>
+
+      <main id="app-container">
+        <!-- ======================= ACTIVACION ======================= -->
+        <section id="step-0-activation" class="app-step">
+          <div class="activacion">
+            <svg class="icono-app grande"><use href="#i-app"/></svg>
+            <h1 class="titulo-grande centrado">SignalCheck Pro</h1>
+            <p class="subtitulo centrado">Calibración y certificación de instrumentos</p>
+
+            <div id="act-paso-cuenta" class="tarjeta act-tarjeta">
+              <h2 class="titulo-tarjeta">Activa este equipo</h2>
+              <p class="ayuda">Escribe el correo y la clave de tu cuenta, y la clave de licencia que te entregamos.</p>
+              <div class="grupo">
+                <label class="fila-campo"><span><svg class="ic"><use href="#i-sobre"/></svg>Correo</span><input type="email" id="loginEmail" aria-label="Correo" autocomplete="username" placeholder="nombre@empresa.com" inputmode="email"></label>
+                <label class="fila-campo"><span><svg class="ic"><use href="#i-llave"/></svg>Clave</span><input type="password" id="loginPassword" aria-label="Clave de la cuenta" autocomplete="current-password" placeholder="Clave de tu cuenta"></label>
+                <label class="fila-campo"><span><svg class="ic"><use href="#i-doc"/></svg>Licencia</span><input type="text" id="licenseKey" aria-label="Clave de licencia" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-…"></label>
+              </div>
+              <button type="button" id="activateBtn" class="btn btn-primario btn-bloque">Activar</button>
             </div>
-          </details>
-          <div class="button-group"><button type="button" id="backBtn1" class="btn-secondary">Atrás</button><button type="button" id="nextBtn2" class="btn-primary">Siguiente</button></div>
-        </div>
-        <div id="form-step-1c" class="form-step-container">
-          <h2>Paso 1.3: Personalización del Reporte (Opcional)</h2>
-          <div class="input-group"><label for="logoInput">Cargar Logo de la Empresa</label><div id="logo-upload-container"><p>Haga clic aquí para seleccionar un archivo (.jpg, .png)</p></div><input type="file" id="logoInput" class="hidden" accept="image/png, image/jpeg"><div id="logo-preview-container" class="hidden"><img id="logo-preview" src="#" alt="Vista previa del logo"><button type="button" id="removeLogoBtn" class="btn-secondary" style="margin-top: 1rem;">Quitar Logo</button></div></div>
-          <div class="button-group"><button type="button" id="backBtn2" class="btn-secondary">Atrás</button><button type="submit" class="btn-primary">Iniciar Calibración</button></div>
-        </div>
-      </form>
-    </section>
-    <section id="step-2-calibration" class="app-step">
-      <h2>Paso 2: Prueba de Calibración</h2><p id="direction-hint"></p>
-      <div id="phase-badge" class="fase-badge">Registrando: <strong id="phase-name">As-Found</strong></div>
-      <div id="corrective-group" class="input-group hidden" style="margin-bottom:1rem;">
-        <label for="correctiveAction">Acción correctiva realizada antes del As-Left</label>
-        <input type="text" id="correctiveAction" placeholder="Ej: Ajuste de cero y span vía HART">
-      </div>
-      <p>Ingrese los valores medidos para cada punto de referencia.</p>
-      <div id="calibration-table-container">
-        <table id="calibration-table"><thead></thead><tbody></tbody></table>
-      </div>
-      <div class="button-group"><button type="button" id="backToStep1Btn" class="btn-secondary">Atrás</button><button type="button" id="resetMeasurementBtn" class="btn-secondary">Reiniciar Medición</button><button type="button" id="validateBtn" class="btn-primary">Validar</button></div>
-      <div class="button-group-vertical"><button type="button" id="recordAsLeftBtn" class="btn-secondary hidden">Ajusté el instrumento &#8594; registrar As-Left</button></div>
-    </section>
-    <section id="step-3-report" class="app-step">
-      <h2>Paso 3: Resultados y Reporte</h2>
-      <div id="summary-card">
-        <h3>Resumen de la Calibración</h3>
-        <p><strong>Nº de Reporte:</strong> <span id="summary-report-id" class="mono"></span></p><p><strong>TAG:</strong> <span id="summary-tag"></span></p><p><strong>Resultado:</strong> <span id="summary-result"></span></p><p><strong>Fecha:</strong> <span id="summary-date"></span></p>
-        <div class="chart-container"><canvas id="chart"></canvas></div>
-        <p id="summary-equation" class="hidden"></p>
-      </div>
-      <div class="button-group-vertical">
-        <button id="generatePdfBtn" class="btn-export">Generar Reporte PDF</button>
-        <button id="fullResetBtn" class="btn-primary" style="margin-top: 1rem;">Volver al Panel de Control</button>
-      </div>
-    </section>
-    <section id="step-4-history" class="app-step">
-      <h2>Historial de Reportes Offline</h2>
-      <div class="history-controls"><input type="search" id="searchTag" placeholder="Buscar por TAG..."><input type="date" id="searchDate"><button id="clearSearchBtn" class="btn-secondary">Limpiar</button></div>
-      <div id="history-list-container"><p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p></div>
-      <div class="button-group-vertical">
-        <div id="backup-status" class="hidden"></div>
-        <button type="button" id="exportBackupBtn" class="btn-export">Exportar respaldo (.json)</button>
-        <button type="button" id="importBackupBtn" class="btn-secondary">Importar respaldo</button>
-        <input type="file" id="importBackupInput" class="hidden" accept="application/json,.json">
-        <button type="button" id="downloadAllPdfBtn" class="btn-secondary">Descargar todos los PDF</button>
-        <button id="deleteAllHistoryBtn" class="btn-secondary" style="background-color: var(--fail-color);">Borrar Todo el Historial</button>
-        <button id="backToHomeBtn" class="btn-primary">Volver al Panel de Control</button>
-      </div>
-    </section>
-    <div id="error-message" class="hidden"></div>
-    <div id="update-notification" class="hidden"><p>Nueva versión disponible.</p><button id="update-btn" class="btn-primary">Actualizar</button></div>
-  </main>
+
+            <div id="act-paso-codigo" class="tarjeta act-tarjeta hidden">
+              <h2 class="titulo-tarjeta">Revisa tu correo</h2>
+              <p class="ayuda" id="act-codigo-texto">Te enviamos un código de 6 dígitos.</p>
+              <div class="otp" id="otp" role="group" aria-label="Código de 6 dígitos">
+                <input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 1" autocomplete="one-time-code"><input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 2"><input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 3"><input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 4"><input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 5"><input inputmode="numeric" pattern="[0-9]*" aria-label="Dígito 6">
+              </div>
+              <button type="button" id="act-verificar" class="btn btn-primario btn-bloque">Confirmar</button>
+              <div class="fila-botones-texto">
+                <button type="button" id="act-reenviar" class="btn-texto">Reenviar código</button>
+                <button type="button" id="act-volver" class="btn-texto">Volver</button>
+              </div>
+            </div>
+
+            <div id="activation-error-message" class="aviso aviso-error hidden" role="alert"></div>
+            <p class="pie-legal">Funciona sin internet una vez activada. Soporte: lc.marroquin25@gmail.com</p>
+          </div>
+        </section>
+
+        <!-- ========================= INICIO ========================= -->
+        <section id="step-home" class="app-step">
+          <p class="sobretitulo" id="home-fecha"></p>
+          <h1 class="titulo-grande" id="home-saludo">Inicio</h1>
+
+          <button type="button" id="goToAppBtn" class="tarjeta-accion">
+            <span class="accion-icono"><svg class="ic"><use href="#i-calibrar"/></svg></span>
+            <span class="accion-texto"><strong>Nueva calibración</strong><span>Datos del instrumento, prueba y certificado PDF</span></span>
+            <svg class="ic chevron"><use href="#i-chevron"/></svg>
+          </button>
+
+          <div id="backup-warning" class="aviso aviso-alerta hidden"></div>
+
+          <div class="metricas" id="home-metricas">
+            <div class="metrica"><span class="metrica-valor" id="stat-total">0</span><span class="metrica-nombre">Reportes</span></div>
+            <div class="metrica ok"><span class="metrica-valor" id="stat-ok">0</span><span class="metrica-nombre">Aprobados</span></div>
+            <div class="metrica falla"><span class="metrica-valor" id="stat-fail">0</span><span class="metrica-nombre">Rechazados</span></div>
+          </div>
+
+          <div class="seccion-cabecera"><h2>Recientes</h2><button type="button" id="goToHistoryBtn" class="btn-texto">Ver todo</button></div>
+          <p id="history-summary" class="nota">Verificando reportes guardados…</p>
+          <div class="grupo lista" id="home-recientes"></div>
+        </section>
+
+        <!-- ====================== CALIBRACION 1 ====================== -->
+        <section id="step-1-datasheet" class="app-step">
+          <ol class="pasos" aria-label="Progreso">
+            <li data-paso="1">Instrumento</li><li data-paso="2">Prueba</li><li data-paso="3">Reporte</li><li data-paso="4">Medición</li><li data-paso="5">Resultado</li>
+          </ol>
+          <form id="instrumentForm" novalidate>
+            <div id="form-step-1a" class="form-step-container active">
+              <h1 class="titulo-grande">Instrumento</h1>
+              <h3 class="grupo-titulo">Identificación</h3>
+              <div class="grupo input-grid">
+                <div class="input-group"><label for="tag" class="req">TAG del instrumento</label><input type="text" id="tag" required placeholder="PT-101A" autocapitalize="characters"></div>
+                <div class="input-group"><label for="instrumentType">Tipo de instrumento</label><input type="text" id="instrumentType" placeholder="Transmisor de presión"></div>
+                <div class="input-group"><label for="brand">Marca</label><input type="text" id="brand" placeholder="Rosemount"></div>
+                <div class="input-group"><label for="model">Modelo</label><input type="text" id="model" placeholder="3051S"></div>
+                <div class="input-group"><label for="serialNumber">Nº de serie</label><input type="text" id="serialNumber" placeholder="123456789"></div>
+                <div class="input-group"><label for="power">Alimentación</label><input type="text" id="power" placeholder="24 VDC"></div>
+                <div class="input-group"><label for="protocol">Protocolo</label><select id="protocol"><option value="N/A">N/A</option><option value="4 a 20 mA">4 a 20 mA</option><option value="Hart">HART</option><option value="Foundation Fieldbus">Foundation Fieldbus</option><option value="Profibus">Profibus</option><option value="3 a 15 psi">3 a 15 psi</option><option value="Otro">Otro</option></select></div>
+                <div class="input-group hidden" id="protocolOtherGroup"><label for="protocolOther">Otro protocolo</label><input type="text" id="protocolOther"></div>
+                <div class="input-group"><label for="workArea">Área de trabajo</label><input type="text" id="workArea" placeholder="Área de compresores"></div>
+              </div>
+              <h3 class="grupo-titulo">Rango de medida</h3>
+              <div class="grupo input-grid tres">
+                <div class="input-group"><label for="lrv" class="req">Valor mínimo (LRV)</label><input type="text" id="lrv" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="0" required></div>
+                <div class="input-group"><label for="urv" class="req">Valor máximo (URV)</label><input type="text" id="urv" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="100" required></div>
+                <div class="input-group"><label for="pvUnit" class="req">Unidad de PV</label><select id="pvUnit" required><option value="" disabled selected>Seleccione…</option><optgroup label="Presión"><option value="psi">psi</option><option value="bar">bar</option><option value="inH2O">inH2O</option><option value="mmH2O">mmH2O</option><option value="inHg">inHg</option><option value="mmHg">mmHg</option><option value="kPa">kPa</option><option value="kg/cm²">kg/cm²</option></optgroup><optgroup label="Temperatura"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup><optgroup label="Flujo"><option value="GPM">GPM</option><option value="LPM">LPM</option><option value="m³/h">m³/h</option><option value="ft³/h">ft³/h</option></optgroup><optgroup label="Nivel"><option value="%">%</option><option value="m">m</option><option value="cm">cm</option><option value="ft">ft</option><option value="in">in</option></optgroup><optgroup label="Otras"><option value="pH">pH</option><option value="RPM">RPM</option><option value="Hz">Hz</option></optgroup><option value="custom">Otra…</option></select></div>
+                <div class="input-group hidden" id="pvUnitOtherGroup"><label for="pvUnitOther">Otra unidad</label><input type="text" id="pvUnitOther"></div>
+              </div>
+              <div class="barra-acciones"><button type="button" id="homeBtn1" class="btn btn-gris">Cancelar</button><button type="button" id="nextBtn1" class="btn btn-primario">Siguiente</button></div>
+            </div>
+
+            <div id="form-step-1b" class="form-step-container">
+              <h1 class="titulo-grande">Prueba</h1>
+              <h3 class="grupo-titulo">Ensayo</h3>
+              <div class="grupo input-grid">
+                <div class="input-group"><label for="calibrationDate">Fecha de la calibración</label><input type="date" id="calibrationDate" required></div>
+                <div class="input-group"><label for="workOrder">Orden de trabajo</label><input type="text" id="workOrder" placeholder="OT-2026-001"></div>
+                <div class="input-group ancho"><label for="pointCount">Puntos de prueba</label>
+                  <select id="pointCount" class="segmentar">
+                    <option value="3" data-corto="3">3 puntos (0 - 50 - 100 %)</option>
+                    <option value="5" data-corto="5" selected>5 puntos (cada 25 %)</option>
+                    <option value="9" data-corto="9">9 puntos (cada 12,5 %)</option>
+                    <option value="11" data-corto="11">11 puntos (cada 10 %)</option>
+                  </select></div>
+                <div class="input-group ancho"><label for="testDirection">Recorrido del ensayo</label><select id="testDirection" class="segmentar"><option value="asc-desc" data-corto="Subida y bajada" selected>Subida y bajada (histéresis) &#8212; IEC 60770-1</option><option value="asc" data-corto="Solo subida">Solo subida (verificación rápida)</option></select></div>
+                <div class="input-group"><label for="testCondition">Condición</label><select id="testCondition" class="segmentar"><option value="As-Found" data-corto="As-Found">As-Found (Tal como se encontró)</option><option value="As-Left" data-corto="As-Left">As-Left (Tal como se dejó)</option></select></div>
+                <div class="input-group"><label for="testType">Lugar de la prueba</label><select id="testType" class="segmentar"><option value="En Taller" data-corto="Taller">En Taller</option><option value="En Campo" data-corto="Campo">En Campo</option></select></div>
+                <div class="input-group ancho"><label for="outputMode">Señal de salida (mA)</label>
+                  <select id="outputMode" class="segmentar">
+                    <option value="calc" data-corto="Calculada" selected>Calculada a partir del PV (no se mide)</option>
+                    <option value="medida" data-corto="Medida">Medida con instrumento certificado</option>
+                  </select></div>
+                <div class="input-group ancho hidden" id="currentMeterGroup"><label for="currentMeter">Instrumento de medición de corriente</label><input type="text" id="currentMeter" placeholder="Fluke 87V  SN-4455"></div>
+              </div>
+
+              <h3 class="grupo-titulo">Criterio de aceptación</h3>
+              <div class="grupo input-grid">
+                <div class="input-group"><label for="permissibleError" class="req">Error permisible (% del span)</label><input type="text" id="permissibleError" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="1.0" required></div>
+                <div class="input-group"><label for="hysteresisTolerance">Histéresis permisible (% del span)</label><input type="text" id="hysteresisTolerance" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Igual al error permisible"></div>
+              </div>
+
+              <h3 class="grupo-titulo">Equipo patrón</h3>
+              <div class="grupo input-grid">
+                <div class="input-group"><label for="calibrator">Equipo de calibración</label><input type="text" id="calibrator" placeholder="Fluke 754"></div>
+                <div class="input-group"><label for="calibratorSerialNumber">Nº de serie del patrón</label><input type="text" id="calibratorSerialNumber" placeholder="SN-987654321"></div>
+                <div class="input-group"><label for="calibratorLastCal">Última calibración</label><input type="date" id="calibratorLastCal"></div>
+                <div class="input-group"><label for="calibratorCalDue">Vencimiento de la calibración</label><input type="date" id="calibratorCalDue"></div>
+              </div>
+
+              <h3 class="grupo-titulo">Cliente y personal</h3>
+              <div class="grupo input-grid">
+                <div class="input-group"><label for="executingCompany">Empresa ejecutora</label><input type="text" id="executingCompany" placeholder="Nombre de su empresa"></div>
+                <div class="input-group"><label for="clientType">Cliente</label><select id="clientType" class="segmentar"><option value="Interno" data-corto="Interno">Interno</option><option value="Externo" data-corto="Externo">Externo</option></select></div>
+                <div class="input-group hidden" id="clientNameGroup"><label for="clientName">Nombre del cliente externo</label><input type="text" id="clientName" placeholder="Empresa cliente"></div>
+                <div class="input-group"><label for="technician">Técnico ejecutante</label><input type="text" id="technician" placeholder="Nombre del técnico" autocomplete="name"></div>
+                <div class="input-group"><label for="workLead">Responsable del trabajo</label><input type="text" id="workLead" placeholder="Nombre del responsable"></div>
+                <div class="input-group"><label for="supervisor">Supervisor de operaciones</label><input type="text" id="supervisor" placeholder="Nombre del supervisor"></div>
+              </div>
+
+              <details id="uncertainty-block" class="grupo">
+                <summary>Incertidumbre de medición <span class="etiqueta-opcional">opcional</span></summary>
+                <p class="ayuda">Declare los componentes que conoce. La incertidumbre combinada y la expandida se calculan; no se editan. Si deja vacía la del patrón, el reporte no incluye esta sección.</p>
+                <div class="input-grid">
+                  <div class="input-group"><label for="stdUncertainty">U del patrón (% del span)</label><input type="text" id="stdUncertainty" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="Del certificado del patrón"></div>
+                  <div class="input-group"><label for="stdUncertaintyK">Factor k del certificado</label><input type="text" id="stdUncertaintyK" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="2"></div>
+                  <div class="input-group"><label for="resolutionUUT">Resolución del instrumento (PV)</label><input type="text" id="resolutionUUT" class="numeric-input-field" inputmode="decimal" autocomplete="off" placeholder="0.01"></div>
+                  <div class="input-group"><label for="coverageK">Factor de cobertura k del reporte</label><input type="text" id="coverageK" class="numeric-input-field" inputmode="decimal" autocomplete="off" value="2"></div>
+                </div>
+              </details>
+              <div class="barra-acciones"><button type="button" id="backBtn1" class="btn btn-gris">Atrás</button><button type="button" id="nextBtn2" class="btn btn-primario">Siguiente</button></div>
+            </div>
+
+            <div id="form-step-1c" class="form-step-container">
+              <h1 class="titulo-grande">Reporte</h1>
+              <p class="subtitulo">Opcional: el logo de su empresa aparece en el encabezado del certificado.</p>
+              <div class="grupo carga-logo">
+                <label for="logoInput" class="hidden">Logo de la empresa</label>
+                <div id="logo-upload-container" role="button" tabindex="0"><svg class="ic grande"><use href="#i-foto"/></svg><p>Elegir logo<br><span>PNG o JPG</span></p></div>
+                <input type="file" id="logoInput" class="hidden" accept="image/png, image/jpeg">
+                <div id="logo-preview-container" class="hidden"><img id="logo-preview" src="#" alt="Vista previa del logo"><button type="button" id="removeLogoBtn" class="btn-texto peligro">Quitar logo</button></div>
+              </div>
+              <div class="barra-acciones"><button type="button" id="backBtn2" class="btn btn-gris">Atrás</button><button type="submit" class="btn btn-primario">Iniciar calibración</button></div>
+            </div>
+          </form>
+        </section>
+
+        <!-- ====================== CALIBRACION 2 ====================== -->
+        <section id="step-2-calibration" class="app-step">
+          <ol class="pasos" aria-label="Progreso">
+            <li data-paso="1">Instrumento</li><li data-paso="2">Prueba</li><li data-paso="3">Reporte</li><li data-paso="4">Medición</li><li data-paso="5">Resultado</li>
+          </ol>
+          <h1 class="titulo-grande">Medición</h1>
+          <div class="fila-chips">
+            <div id="phase-badge" class="fase-badge">Registrando <strong id="phase-name">As-Found</strong></div>
+          </div>
+          <p id="direction-hint" class="subtitulo"></p>
+          <div id="corrective-group" class="grupo input-group hidden">
+            <label for="correctiveAction">Acción correctiva realizada antes del As-Left</label>
+            <input type="text" id="correctiveAction" placeholder="Ajuste de cero y span vía HART">
+          </div>
+          <div id="calibration-table-container" class="grupo tabla-contenedor">
+            <table id="calibration-table"><thead></thead><tbody></tbody></table>
+          </div>
+          <div class="barra-acciones">
+            <button type="button" id="backToStep1Btn" class="btn btn-gris">Atrás</button>
+            <button type="button" id="resetMeasurementBtn" class="btn btn-gris">Reiniciar</button>
+            <button type="button" id="validateBtn" class="btn btn-primario">Validar</button>
+          </div>
+          <button type="button" id="recordAsLeftBtn" class="btn btn-tinte btn-bloque hidden">Ajusté el instrumento &#8594; registrar As-Left</button>
+        </section>
+
+        <!-- ====================== CALIBRACION 3 ====================== -->
+        <section id="step-3-report" class="app-step">
+          <ol class="pasos" aria-label="Progreso">
+            <li data-paso="1">Instrumento</li><li data-paso="2">Prueba</li><li data-paso="3">Reporte</li><li data-paso="4">Medición</li><li data-paso="5">Resultado</li>
+          </ol>
+          <div id="summary-card">
+            <div class="veredicto">
+              <svg class="ic veredicto-ok"><use href="#i-ok"/></svg>
+              <svg class="ic veredicto-falla"><use href="#i-falla"/></svg>
+              <div>
+                <p class="sobretitulo">Resultado · <span id="summary-tag"></span></p>
+                <h1 class="titulo-grande"><span id="summary-result"></span></h1>
+              </div>
+            </div>
+            <div class="metricas" id="summary-metrics"></div>
+            <div class="grupo lista-datos">
+              <div class="dato"><span>Nº de reporte</span><span id="summary-report-id" class="mono"></span></div>
+              <div class="dato"><span>Fecha</span><span id="summary-date"></span></div>
+              <div class="dato"><span>Ecuación del lazo</span><span id="summary-equation" class="mono hidden"></span></div>
+            </div>
+            <h3 class="grupo-titulo">Desviación por punto</h3>
+            <div class="grupo chart-container"><canvas id="chart"></canvas></div>
+          </div>
+          <div class="barra-acciones apilada">
+            <button id="generatePdfBtn" class="btn btn-exito btn-bloque"><svg class="ic"><use href="#i-doc"/></svg>Generar certificado PDF</button>
+            <button id="fullResetBtn" class="btn btn-gris btn-bloque">Terminar y volver al inicio</button>
+          </div>
+        </section>
+
+        <!-- ======================== HISTORIAL ======================== -->
+        <section id="step-4-history" class="app-step">
+          <h1 class="titulo-grande">Historial</h1>
+          <div class="history-controls">
+            <label class="buscador"><svg class="ic"><use href="#i-buscar"/></svg><input type="search" id="searchTag" placeholder="Buscar por TAG"></label>
+            <input type="date" id="searchDate" aria-label="Filtrar por fecha">
+            <button id="clearSearchBtn" class="btn-texto">Limpiar</button>
+          </div>
+          <div id="history-list-container" class="grupo lista"><p class="empty-history-message">No hay reportes que coincidan con su búsqueda.</p></div>
+          <p class="nota">Toque un reporte para volver a generar su certificado con el mismo número.</p>
+
+          <h3 class="grupo-titulo">Respaldo</h3>
+          <div id="backup-status" class="hidden"></div>
+          <div class="grupo lista acciones-lista">
+            <button type="button" id="exportBackupBtn" class="fila-accion"><svg class="ic"><use href="#i-subir"/></svg>Exportar respaldo (.json)</button>
+            <button type="button" id="importBackupBtn" class="fila-accion"><svg class="ic"><use href="#i-bajar"/></svg>Importar respaldo</button>
+            <input type="file" id="importBackupInput" class="hidden" accept="application/json,.json">
+            <button type="button" id="downloadAllPdfBtn" class="fila-accion"><svg class="ic"><use href="#i-doc"/></svg>Descargar todos los PDF</button>
+            <button id="deleteAllHistoryBtn" class="fila-accion peligro"><svg class="ic"><use href="#i-papelera"/></svg>Borrar todo el historial</button>
+          </div>
+          <button id="backToHomeBtn" class="hidden" type="button">Inicio</button>
+        </section>
+
+        <!-- ========================= AJUSTES ========================= -->
+        <section id="step-settings" class="app-step">
+          <h1 class="titulo-grande">Ajustes</h1>
+
+          <h3 class="grupo-titulo">Licencia</h3>
+          <div class="grupo lista-datos">
+            <div class="dato"><span>Plan</span><span id="lic-plan">—</span></div>
+            <div class="dato"><span>Vigencia</span><span id="lic-vence">—</span></div>
+            <div class="dato"><span>Uso sin conexión</span><span id="lic-token">—</span></div>
+            <div class="dato"><span>Equipo</span><span id="lic-equipo" class="mono">—</span></div>
+          </div>
+          <div class="grupo lista acciones-lista">
+            <button type="button" id="btn-renovar-licencia" class="fila-accion"><svg class="ic"><use href="#i-recargar"/></svg>Comprobar licencia ahora</button>
+          </div>
+
+          <h3 class="grupo-titulo">Apariencia</h3>
+          <div class="grupo">
+            <div class="fila-ajuste"><span>Tema</span>
+              <select id="prefTema" class="segmentar"><option value="auto" data-corto="Automático">Automático</option><option value="light" data-corto="Claro">Claro</option><option value="dark" data-corto="Oscuro">Oscuro</option></select>
+            </div>
+            <label class="fila-ajuste" for="prefTecladoGrande"><span>Teclado numérico grande<small>Para trabajar con guantes</small></span><input type="checkbox" id="prefTecladoGrande" class="interruptor"></label>
+          </div>
+
+          <h3 class="grupo-titulo">Soporte</h3>
+          <div class="grupo lista acciones-lista">
+            <button type="button" id="btn-diagnostico" class="fila-accion"><svg class="ic"><use href="#i-doc"/></svg>Copiar diagnóstico para soporte</button>
+          </div>
+          <p class="nota">SignalCheck Pro™ <span id="app-version"></span> · Asistente de campo para la calibración de instrumentos. Los reportes se guardan en este dispositivo y funcionan sin conexión.</p>
+        </section>
+
+        <div id="error-message" class="toast hidden" role="alert"></div>
+        <div id="update-notification" class="toast toast-info hidden"><p>Hay una versión nueva disponible.</p><button id="update-btn" class="btn btn-primario btn-chico">Actualizar</button></div>
+      </main>
+    </div>
+
+    <!-- Barra de pestanas (celular y tableta, como en iOS) -->
+    <nav class="tabbar" aria-label="Secciones">
+      <button type="button" class="tab" data-ir="home"><svg class="ic"><use href="#i-inicio"/></svg><span>Inicio</span></button>
+      <button type="button" class="tab" data-ir="calibrar"><svg class="ic"><use href="#i-calibrar"/></svg><span>Calibrar</span></button>
+      <button type="button" class="tab" data-ir="history"><svg class="ic"><use href="#i-historial"/></svg><span>Historial</span></button>
+      <button type="button" class="tab" data-ir="settings"><svg class="ic"><use href="#i-ajustes"/></svg><span>Ajustes</span></button>
+    </nav>
+  </div>
+
+  <div id="dialogo" class="dialogo-fondo hidden" role="dialog" aria-modal="true" aria-labelledby="dialogo-titulo">
+    <div class="dialogo"><h2 id="dialogo-titulo"></h2><p id="dialogo-texto"></p><div class="dialogo-botones" id="dialogo-botones"></div></div>
+  </div>
+
   <div id="custom-keyboard">
     <div class="keyboard-grid">
       <button class="keyboard-btn" data-key="7">7</button><button class="keyboard-btn" data-key="8">8</button><button class="keyboard-btn" data-key="9">9</button><button class="keyboard-btn backspace-btn" data-key="backspace">⌫</button>
-      <button class="keyboard-btn" data-key="4">4</button><button class="keyboard-btn" data-key="5">5</button><button class="keyboard-btn" data-key="6">6</button><button class="keyboard-btn" data-key="-">-</button>
+      <button class="keyboard-btn" data-key="4">4</button><button class="keyboard-btn" data-key="5">5</button><button class="keyboard-btn" data-key="6">6</button><button class="keyboard-btn" data-key="-">−</button>
       <button class="keyboard-btn" data-key="1">1</button><button class="keyboard-btn" data-key="2">2</button><button class="keyboard-btn" data-key="3">3</button><button class="keyboard-btn" data-key=".">.</button>
-      <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">OK</button>
+      <button class="keyboard-btn" data-key="0">0</button><button class="keyboard-btn ok-btn" data-key="ok">Listo</button>
     </div>
   </div>
-  <script src="script.js?v=9.0.0"></script>
+  <script src="config.js?v=9.1.0"></script>
+  
+  <script src="script.js?v=9.1.0"></script>
 </body>
 </html>
